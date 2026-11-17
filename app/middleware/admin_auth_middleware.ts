@@ -4,18 +4,18 @@ import User from '#models/user'
 
 export default class AdminAuthMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
-    const adminUser = ctx.session.get('admin_user')
+    const guard = ctx.auth.use('web')
 
-    if (!adminUser?.id) {
+    if (!guard.isAuthenticated) {
       return ctx.response.unauthorized({
         message: 'Não autenticado.',
       })
     }
 
-    const user = await User.find(adminUser.id)
+    const user = await User.find(guard.user!.id)
 
     if (!user || user.role !== 'admin') {
-      ctx.session.forget('admin_user')
+      await guard.logout()
 
       return ctx.response.forbidden({
         message: 'Acesso permitido apenas para administradores.',

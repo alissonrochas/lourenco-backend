@@ -3,9 +3,18 @@ import { loginValidator } from '#validators/user'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class AdminAuthController {
-  async login({ request, response, session }: HttpContext) {
+  async login({ request, response, auth }: HttpContext) {
     const { email, password } = await request.validateUsing(loginValidator)
-    const user = await User.verifyCredentials(email, password)
+
+    let user: User
+
+    try {
+      user = await User.verifyCredentials(email, password)
+    } catch (_error) {
+      return response.unauthorized({
+        message: 'Credenciais inválidas.',
+      })
+    }
 
     if (user.role !== 'admin') {
       return response.forbidden({
@@ -13,12 +22,7 @@ export default class AdminAuthController {
       })
     }
 
-    session.put('admin_user', {
-      id: user.id,
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-    })
+    await auth.use('web').login(user)
 
     return response.json({
       ok: true,
@@ -31,23 +35,40 @@ export default class AdminAuthController {
     })
   }
 
-  async me({ response, session }: HttpContext) {
-    const adminUser = session.get('admin_user')
+  async me({ response, auth }: HttpContext) {
+    const guard = auth.use('web')
 
-    if (!adminUser) {
+    if (!guard.isAuthenticated) {
       return response.unauthorized({
         message: 'Não autenticado.',
       })
     }
 
+    const user = await User.find(guard.user!.id)
+
+    if (!user || user.role !== 'admin') {
+      await guard.logout()
+
+      return response.forbidden({
+        message: 'Acesso permitido apenas para administradores.',
+      })
+    }
+
     return response.json({
       ok: true,
-      user: adminUser,
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
     })
   }
 
-  async logout({ response, session }: HttpContext) {
-    session.forget('admin_user')
+  async logout({ response, auth, session }: HttpContext) {
+    await auth.use('web').logout()
+    session.clear()
+    session.regenerate()
 
     return response.json({ ok: true })
   }

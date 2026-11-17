@@ -33,8 +33,6 @@ router
   .group(() => {
     router.get('login', [controllers.Session, 'create'])
     router.post('login', [controllers.Session, 'store'])
-    router.get('signup', [controllers.NewAccount, 'create'])
-    router.post('signup', [controllers.NewAccount, 'store'])
   })
   .use(middleware.guest())
 
@@ -43,4 +41,6 @@ router
     router.on('/dashboard').renderInertia('dashboard', {}).as('dashboard')
     router.post('logout', [controllers.Session, 'destroy'])
   })
-  .use(middleware.auth())
+  .use(middleware.adminAuth())
+
+router.get('/api/csrf', ({ response }) => response.json({ ok: true }))
