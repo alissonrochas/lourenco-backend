@@ -16,7 +16,9 @@ import router from '@adonisjs/core/services/router'
 router.on('/').renderInertia('home', {}).as('home')
 
 router.post('/api/customers', [CustomersController, 'store'])
-router.get('/api/customers', [CustomersController, 'index'])
+router
+  .get('/api/customers', [CustomersController, 'index'])
+  .use(middleware.adminAuth())
 
 router.post('/api/admin/login', [AdminAuthController, 'login'])
 
