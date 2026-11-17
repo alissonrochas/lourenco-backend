@@ -11,6 +11,12 @@ export default class SessionController {
     const { email, password } = await request.validateUsing(loginValidator)
     const user = await User.verifyCredentials(email, password)
 
+    if (user.role !== 'admin') {
+      return response.forbidden({
+        message: 'Acesso permitido apenas para administradores.',
+      })
+    }
+
     await auth.use('web').login(user)
     response.redirect().toRoute('dashboard')
   }
