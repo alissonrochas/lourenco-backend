@@ -14,17 +14,35 @@ const routes = {
     tokens: [[0,"/"]],
     types: placeholder as Registry['home']['types'],
   },
-  'new_account.create': {
-    methods: ["GET","HEAD"],
-    pattern: '/signup',
-    tokens: [[0,"signup"]],
-    types: placeholder as Registry['new_account.create']['types'],
-  },
-  'new_account.store': {
+  'customers.store': {
     methods: ["POST"],
-    pattern: '/signup',
-    tokens: [[0,"signup"]],
-    types: placeholder as Registry['new_account.store']['types'],
+    pattern: '/api/customers',
+    tokens: [[0,"api"],[0,"customers"]],
+    types: placeholder as Registry['customers.store']['types'],
+  },
+  'customers.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/customers',
+    tokens: [[0,"api"],[0,"customers"]],
+    types: placeholder as Registry['customers.index']['types'],
+  },
+  'admin_auth.login': {
+    methods: ["POST"],
+    pattern: '/api/admin/login',
+    tokens: [[0,"api"],[0,"admin"],[0,"login"]],
+    types: placeholder as Registry['admin_auth.login']['types'],
+  },
+  'admin_auth.logout': {
+    methods: ["POST"],
+    pattern: '/api/admin/logout',
+    tokens: [[0,"api"],[0,"admin"],[0,"logout"]],
+    types: placeholder as Registry['admin_auth.logout']['types'],
+  },
+  'admin_auth.me': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/admin/me',
+    tokens: [[0,"api"],[0,"admin"],[0,"me"]],
+    types: placeholder as Registry['admin_auth.me']['types'],
   },
   'session.create': {
     methods: ["GET","HEAD"],
@@ -37,6 +55,18 @@ const routes = {
     pattern: '/login',
     tokens: [[0,"login"]],
     types: placeholder as Registry['session.store']['types'],
+  },
+  'new_account.create': {
+    methods: ["GET","HEAD"],
+    pattern: '/signup',
+    tokens: [[0,"signup"]],
+    types: placeholder as Registry['new_account.create']['types'],
+  },
+  'new_account.store': {
+    methods: ["POST"],
+    pattern: '/signup',
+    tokens: [[0,"signup"]],
+    types: placeholder as Registry['new_account.store']['types'],
   },
   'dashboard': {
     methods: ["GET","HEAD"],

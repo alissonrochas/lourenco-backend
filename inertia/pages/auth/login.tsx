@@ -1,11 +1,11 @@
 import AuthLayout from '~/layouts/auth'
-import { Form, Link } from '@adonisjs/inertia/react'
+import { Form } from '@adonisjs/inertia/react'
 
 export default function Login() {
   return (
     <>
-      <h1 className="auth__title">Welcome back</h1>
-      <p className="auth__sub">Sign in to continue building.</p>
+      <h1 className="auth__title">Acesso da gestão</h1>
+      <p className="auth__sub">Entre para controlar horários, clientes e agenda.</p>
 
       <Form route="session.store">
         {({ errors, processing }) => (
@@ -48,17 +48,14 @@ export default function Login() {
               disabled={processing}
               style={{ marginTop: 4 }}
             >
-              {processing ? 'One moment…' : 'Sign in'}
+              {processing ? 'Aguarde…' : 'Entrar'}
             </button>
           </div>
         )}
       </Form>
 
       <p className="auth__foot">
-        New here?{' '}
-        <Link route="new_account.create" className="il">
-          Create an account
-        </Link>
+        Acesso exclusivo da gestão.
       </p>
     </>
   )
