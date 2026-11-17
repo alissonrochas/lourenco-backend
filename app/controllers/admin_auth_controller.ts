@@ -7,10 +7,17 @@ export default class AdminAuthController {
     const { email, password } = await request.validateUsing(loginValidator)
     const user = await User.verifyCredentials(email, password)
 
+    if (user.role !== 'admin') {
+      return response.forbidden({
+        message: 'Acesso permitido apenas para administradores.',
+      })
+    }
+
     session.put('admin_user', {
       id: user.id,
       fullName: user.fullName,
       email: user.email,
+      role: user.role,
     })
 
     return response.json({
@@ -19,6 +26,7 @@ export default class AdminAuthController {
         id: user.id,
         fullName: user.fullName,
         email: user.email,
+        role: user.role,
       },
     })
   }

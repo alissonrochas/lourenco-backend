@@ -16,21 +16,20 @@ function getCookieHeader(response: Response) {
     .join('; ')
 }
 
-test.group('customer registration and admin auth', (group) => {
+test.group('customer registration and admin authorization', (group) => {
   group.each.setup(async () => {
     await Customer.query().delete()
     await User.query().delete()
   })
 
-  test('it registers a customer with name and phone', async () => {
+  test('it keeps customer registration public and does not create a user role', async () => {
     const response = await fetch('http://127.0.0.1:3333/api/customers', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'Lucas Silva',
         phone: '(11) 99999-1234',
+        role: 'admin',
       }),
     })
 
@@ -39,6 +38,7 @@ test.group('customer registration and admin auth', (group) => {
     assert.equal(response.status, 201)
     assert.equal(payload.name, 'Lucas Silva')
     assert.equal(payload.phone, '(11) 99999-1234')
+    assert.equal(await User.query().where('email', 'Lucas Silva').first(), null)
   })
 
   test('it rejects customer listing for unauthenticated users', async () => {
@@ -47,11 +47,12 @@ test.group('customer registration and admin auth', (group) => {
     assert.equal(response.status, 401)
   })
 
-  test('it authenticates the admin and allows customer listing', async () => {
+  test('it allows an admin to authenticate and list customers', async () => {
     await User.create({
       fullName: 'Gerente',
       email: 'admin@barbearia.com',
       password: 'SenhaForte123',
+      role: 'admin',
     })
 
     await Customer.create({
@@ -61,9 +62,7 @@ test.group('customer registration and admin auth', (group) => {
 
     const loginResponse = await fetch('http://127.0.0.1:3333/api/admin/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: 'admin@barbearia.com',
         password: 'SenhaForte123',
@@ -72,20 +71,19 @@ test.group('customer registration and admin auth', (group) => {
 
     const loginPayload = (await loginResponse.json()) as {
       ok: boolean
-      user: { email: string }
+      user: { email: string; role: 'admin' }
     }
 
     assert.equal(loginResponse.status, 200)
     assert.equal(loginPayload.ok, true)
     assert.equal(loginPayload.user.email, 'admin@barbearia.com')
+    assert.equal(loginPayload.user.role, 'admin')
 
     const cookieHeader = getCookieHeader(loginResponse)
     assert.notEqual(cookieHeader, '')
 
     const listResponse = await fetch('http://127.0.0.1:3333/api/customers', {
-      headers: {
-        Cookie: cookieHeader,
-      },
+      headers: { Cookie: cookieHeader },
     })
 
     const customers = (await listResponse.json()) as Array<{ name: string; phone: string }>
@@ -93,5 +91,55 @@ test.group('customer registration and admin auth', (group) => {
     assert.equal(listResponse.status, 200)
     assert.equal(customers.length, 1)
     assert.equal(customers[0].name, 'Lucas Silva')
+  })
+
+  test('it rejects login for a user with role user', async () => {
+    await User.create({
+      fullName: 'Usuário comum',
+      email: 'usuario@barbearia.com',
+      password: 'SenhaForte123',
+      role: 'user',
+    })
+
+    const response = await fetch('http://127.0.0.1:3333/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'usuario@barbearia.com',
+        password: 'SenhaForte123',
+      }),
+    })
+
+    assert.equal(response.status, 403)
+  })
+
+  test('it denies access after an authenticated admin is changed to role user', async () => {
+    const admin = await User.create({
+      fullName: 'Gerente',
+      email: 'admin@barbearia.com',
+      password: 'SenhaForte123',
+      role: 'admin',
+    })
+
+    const loginResponse = await fetch('http://127.0.0.1:3333/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'admin@barbearia.com',
+        password: 'SenhaForte123',
+      }),
+    })
+
+    assert.equal(loginResponse.status, 200)
+
+    const cookieHeader = getCookieHeader(loginResponse)
+    admin.role = 'user'
+    await admin.save()
+
+    const response = await fetch('http://127.0.0.1:3333/api/customers', {
+      headers: { Cookie: cookieHeader },
+    })
+
+    assert.equal(response.status, 403)
   })
 })
