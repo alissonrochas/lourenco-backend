@@ -5,8 +5,11 @@ type ParamValue = string | number | bigint | boolean
 export type ScannedRoutes = {
   ALL: {
     'home': { paramsTuple?: []; params?: {} }
-    'new_account.create': { paramsTuple?: []; params?: {} }
-    'new_account.store': { paramsTuple?: []; params?: {} }
+    'customers.store': { paramsTuple?: []; params?: {} }
+    'customers.index': { paramsTuple?: []; params?: {} }
+    'admin_auth.login': { paramsTuple?: []; params?: {} }
+    'admin_auth.logout': { paramsTuple?: []; params?: {} }
+    'admin_auth.me': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
     'session.store': { paramsTuple?: []; params?: {} }
     'dashboard': { paramsTuple?: []; params?: {} }
@@ -14,18 +17,22 @@ export type ScannedRoutes = {
   }
   GET: {
     'home': { paramsTuple?: []; params?: {} }
-    'new_account.create': { paramsTuple?: []; params?: {} }
+    'customers.index': { paramsTuple?: []; params?: {} }
+    'admin_auth.me': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
     'dashboard': { paramsTuple?: []; params?: {} }
   }
   HEAD: {
     'home': { paramsTuple?: []; params?: {} }
-    'new_account.create': { paramsTuple?: []; params?: {} }
+    'customers.index': { paramsTuple?: []; params?: {} }
+    'admin_auth.me': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
     'dashboard': { paramsTuple?: []; params?: {} }
   }
   POST: {
-    'new_account.store': { paramsTuple?: []; params?: {} }
+    'customers.store': { paramsTuple?: []; params?: {} }
+    'admin_auth.login': { paramsTuple?: []; params?: {} }
+    'admin_auth.logout': { paramsTuple?: []; params?: {} }
     'session.store': { paramsTuple?: []; params?: {} }
     'session.destroy': { paramsTuple?: []; params?: {} }
   }
