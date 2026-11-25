@@ -29,6 +29,18 @@ router
   .group(() => {
     router.post('/api/admin/logout', [() => import('#controllers/admin_auth_controller'), 'logout'])
     router.get('/api/admin/me', [() => import('#controllers/admin_auth_controller'), 'me'])
+    router.get('/api/admin/services', [
+      () => import('#controllers/admin_services_controller'),
+      'index',
+    ])
+    router.get('/api/admin/services/:id', [
+      () => import('#controllers/admin_services_controller'),
+      'show',
+    ])
+    router.post('/api/admin/services', [
+      () => import('#controllers/admin_services_controller'),
+      'store',
+    ])
   })
   .use(middleware.adminAuth())
 

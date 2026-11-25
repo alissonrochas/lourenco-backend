@@ -1,3 +1,4 @@
+import strictAssert from 'node:assert/strict'
 import { assert } from '@japa/assert'
 import app from '@adonisjs/core/services/app'
 import type { Config } from '@japa/runner/types'
@@ -33,7 +34,18 @@ export const plugins: Config['plugins'] = [
  * The teardown functions are executed after all the tests
  */
 export const runnerHooks: Required<Pick<Config, 'setup' | 'teardown'>> = {
-  setup: [],
+  setup: [
+    async () => {
+      // Refuse migrations if test isolation is not configured; never fall back to a local file.
+      strictAssert.equal(app.config.get('database.connection'), 'sqlite')
+      strictAssert.equal(app.config.get('database.connections.sqlite.client'), 'better-sqlite3')
+      strictAssert.equal(
+        app.config.get('database.connections.sqlite.connection.filename'),
+        ':memory:'
+      )
+      return testUtils.db().migrate()
+    },
+  ],
   teardown: [],
 }
 
