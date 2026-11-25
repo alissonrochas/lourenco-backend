@@ -14,7 +14,9 @@ export default class AdminSeeder extends BaseSeeder {
 
     if (existingUser) {
       if (existingUser.role !== 'admin') {
-        throw new Error('An existing user already owns ADMIN_EMAIL; refusing to promote it to admin')
+        throw new Error(
+          'An existing user already owns ADMIN_EMAIL; refusing to promote it to admin'
+        )
       }
 
       return

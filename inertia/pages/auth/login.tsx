@@ -54,9 +54,7 @@ export default function Login() {
         )}
       </Form>
 
-      <p className="auth__foot">
-        Acesso exclusivo da gestão.
-      </p>
+      <p className="auth__foot">Acesso exclusivo da gestão.</p>
     </>
   )
 }
