@@ -27,4 +27,7 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   // CORS
   CORS_ALLOWED_ORIGINS: Env.schema.string(),
+
+  // Reverse proxy
+  TRUST_PROXY: Env.schema.string(),
 })

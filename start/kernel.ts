@@ -50,4 +50,6 @@ export const middleware = router.named({
   guest: () => import('#middleware/guest_middleware'),
   auth: () => import('#middleware/auth_middleware'),
   adminAuth: () => import('#middleware/admin_auth_middleware'),
+  loginRateLimit: () => import('#middleware/login_rate_limit_middleware'),
+  customerRateLimit: () => import('#middleware/customer_rate_limit_middleware'),
 })

@@ -2,14 +2,15 @@ import assert from 'node:assert/strict'
 import { test } from '@japa/runner'
 import Customer from '#models/customer'
 import User from '#models/user'
+import { resetRateLimiter } from '#services/rate_limiter'
 
 const baseUrl = 'http://127.0.0.1:3333'
 
 function parseSetCookies(response: Response) {
   const headerWithMultipleValues = response.headers as Headers & { getSetCookie?: () => string[] }
-  const setCookies = headerWithMultipleValues.getSetCookie?.() ?? (
-    response.headers.get('set-cookie') ? [response.headers.get('set-cookie')!] : []
-  )
+  const setCookies =
+    headerWithMultipleValues.getSetCookie?.() ??
+    (response.headers.get('set-cookie') ? [response.headers.get('set-cookie')!] : [])
 
   const cookies = new Map<string, string>()
 
@@ -44,9 +45,7 @@ function mergeCookieHeaders(existing: string, response: Response) {
 }
 
 function getCookieValue(cookieHeader: string, name: string) {
-  const item = cookieHeader
-    .split(/;\s*/)
-    .find((cookie) => cookie.startsWith(`${name}=`))
+  const item = cookieHeader.split(/;\s*/).find((cookie) => cookie.startsWith(`${name}=`))
 
   return item?.slice(name.length + 1)
 }
@@ -71,7 +70,7 @@ async function postJson(path: string, body: unknown, existingCookie = '') {
     redirect: 'manual',
     headers: {
       'Content-Type': 'application/json',
-      Cookie: csrf.cookieHeader,
+      'Cookie': csrf.cookieHeader,
       'X-XSRF-TOKEN': csrf.xsrfToken,
     },
     body: JSON.stringify(body),
@@ -84,6 +83,7 @@ async function postJson(path: string, body: unknown, existingCookie = '') {
 
 test.group('customer registration and admin authorization', (group) => {
   group.each.setup(async () => {
+    resetRateLimiter()
     await Customer.query().delete()
     await User.query().delete()
   })
@@ -99,7 +99,7 @@ test.group('customer registration and admin authorization', (group) => {
 
     assert.equal(response.status, 201)
     assert.equal(payload.name, 'Lucas Silva')
-    assert.equal(payload.phone, '(11) 99999-1234')
+    assert.equal(payload.phone, '11999991234')
     assert.equal(await User.query().where('email', 'Lucas Silva').first(), null)
   })
 
@@ -223,10 +223,13 @@ test.group('customer registration and admin authorization', (group) => {
       role: 'admin',
     })
 
-    const { response: loginResponse, cookieHeader: oldCookie } = await postJson('/api/admin/login', {
-      email: 'admin@barbearia.com',
-      password: 'SenhaForte123',
-    })
+    const { response: loginResponse, cookieHeader: oldCookie } = await postJson(
+      '/api/admin/login',
+      {
+        email: 'admin@barbearia.com',
+        password: 'SenhaForte123',
+      }
+    )
 
     assert.equal(loginResponse.status, 200)
 
@@ -252,10 +255,14 @@ test.group('customer registration and admin authorization', (group) => {
     const guest = await primeCsrf()
     const guestSessionId = getCookieValue(guest.cookieHeader, 'adonis-session')
 
-    const { response: loginResponse, cookieHeader: authenticatedCookie } = await postJson('/api/admin/login', {
-      email: 'admin@barbearia.com',
-      password: 'SenhaForte123',
-    }, guest.cookieHeader)
+    const { response: loginResponse, cookieHeader: authenticatedCookie } = await postJson(
+      '/api/admin/login',
+      {
+        email: 'admin@barbearia.com',
+        password: 'SenhaForte123',
+      },
+      guest.cookieHeader
+    )
 
     const authenticatedSessionId = getCookieValue(authenticatedCookie, 'adonis-session')
 
@@ -326,6 +333,80 @@ test.group('customer registration and admin authorization', (group) => {
       }),
     })
 
-    assert.equal([302, 419].includes(response.status), true)
+    assert.equal(response.status, 403)
+    assert.equal(response.headers.get('content-type')?.includes('application/json'), true)
+  })
+
+  test('it normalizes phone and rejects formatted duplicates', async () => {
+    const first = await postJson('/api/customers', {
+      name: 'Cliente Um',
+      phone: '(11) 99999-1234',
+    })
+
+    assert.equal(first.response.status, 201)
+
+    const duplicate = await postJson('/api/customers', {
+      name: 'Cliente Dois',
+      phone: '11999991234',
+    })
+
+    assert.equal(duplicate.response.status, 409)
+
+    const payload = (await first.response.json()) as { phone: string; phoneNormalized: string }
+    assert.equal(payload.phone, '11999991234')
+    assert.equal(payload.phoneNormalized, '11999991234')
+  })
+
+  test('it rejects invalid normalized phone lengths', async () => {
+    const { response } = await postJson('/api/customers', {
+      name: 'Cliente Inválido',
+      phone: '---123---',
+    })
+
+    assert.equal(response.status, 422)
+  })
+
+  test('it rate limits repeated customer submissions', async () => {
+    for (let attempt = 1; attempt <= 20; attempt++) {
+      const { response } = await postJson('/api/customers', {
+        name: `Cliente ${attempt}`,
+        phone: '(11) 98888-0000',
+      })
+
+      assert.notEqual(response.status, 429)
+    }
+
+    const { response } = await postJson('/api/customers', {
+      name: 'Cliente bloqueado',
+      phone: '(11) 98888-0000',
+    })
+
+    assert.equal(response.status, 429)
+    assert.notEqual(response.headers.get('retry-after'), null)
+  })
+
+  test('it rate limits repeated administrative login attempts', async () => {
+    await User.create({
+      fullName: 'Gerente',
+      email: 'admin@barbearia.com',
+      password: 'SenhaForte123',
+      role: 'admin',
+    })
+
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      const { response } = await postJson('/api/admin/login', {
+        email: 'admin@barbearia.com',
+        password: 'SenhaErrada123',
+      })
+
+      assert.equal(response.status, 401)
+    }
+
+    const { response } = await postJson('/api/admin/login', {
+      email: 'admin@barbearia.com',
+      password: 'SenhaForte123',
+    })
+
+    assert.equal(response.status, 429)
   })
 })
