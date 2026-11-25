@@ -36,10 +36,22 @@ server.use([
  */
 router.use([
   () => import('@adonisjs/core/bodyparser_middleware'),
-  () => import('@adonisjs/session/session_middleware'),
-  () => import('@adonisjs/shield/shield_middleware'),
-  () => import('@adonisjs/auth/initialize_auth_middleware'),
-  () => import('#middleware/silent_auth_middleware'),
+  () =>
+    import('#middleware/availability_state_middleware').then((module) => ({
+      default: module.AvailabilitySessionMiddleware,
+    })),
+  () =>
+    import('#middleware/availability_state_middleware').then((module) => ({
+      default: module.AvailabilityShieldMiddleware,
+    })),
+  () =>
+    import('#middleware/availability_state_middleware').then((module) => ({
+      default: module.AvailabilityInitializeAuthMiddleware,
+    })),
+  () =>
+    import('#middleware/availability_state_middleware').then((module) => ({
+      default: module.AvailabilitySilentAuthMiddleware,
+    })),
 ])
 
 /**
@@ -52,5 +64,8 @@ export const middleware = router.named({
   adminAuth: () => import('#middleware/admin_auth_middleware'),
   loginRateLimit: () => import('#middleware/login_rate_limit_middleware'),
   customerRateLimit: () => import('#middleware/customer_rate_limit_middleware'),
-  availabilityRateLimit: () => import('#middleware/availability_rate_limit_middleware'),
+  availabilityRateLimit: () =>
+    import('#middleware/availability_state_middleware').then((module) => ({
+      default: module.AvailabilityRouteRateLimitMiddleware,
+    })),
 })

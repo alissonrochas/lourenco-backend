@@ -51,13 +51,34 @@ Esse exemplo não define expediente padrão nem garante que a data esteja dispon
 
 Controller valida a query com VineJS e o validador de calendário real existente, chama BookingAvailabilityService e serializa com PublicAvailabilityTransformer. O motor permanece intacto: dia da semana, pausas, bloqueios, UTC e passado são calculados somente por ele. Não há serviceId ou consulta de catálogo.
 
-Não há escrita de configuração, criação de clientes, persistência de disponibilidade ou cache do resultado. As consultas usam o snapshot do serviço existente. Alterações administrativas passam a afetar consultas seguintes automaticamente, sem reconstrução de cache. Os middlewares de segurança/sessão existentes permanecem em uso; o endpoint não exige sessão ou token XSRF.
+Não há escrita de configuração, criação de clientes, persistência de disponibilidade ou cache do resultado. As consultas usam o snapshot do serviço existente. Alterações administrativas passam a afetar consultas seguintes automaticamente, sem reconstrução de cache. O GET dessa rota é sem estado de sessão: não inicializa sessão/autenticação, não gera segredo CSRF nem envia cookies de sessão/XSRF. Os outros endpoints preservam o fluxo original, conforme a estratégia abaixo.
 
 A resposta JSON não contém motivos administrativos, IDs de configuração, clientes, sessões, tokens, timestamps internos ou detalhes do banco. Razões de fechamento também não são publicadas; slots vazio é suficiente. Erros inesperados são registrados no servidor e convertidos em mensagem pública genérica, sem stack/SQL na resposta.
 
+## Consulta sem estado e encadeamento dos middlewares
+
+A versão instalada do Adonis executa os middlewares de servidor, identifica a rota e atribui `ctx.route`, e só então executa os middlewares globais do roteador seguidos dos middlewares específicos da rota. Portanto, o rate limiter apenas na rota era tardio: o Shield podia criar o segredo CSRF e a camada de sessão persistia essa alteração, mesmo em GET ou em respostas 429.
+
+A correção é restrita por três condições simultâneas: método **GET**, nome `public.bookingAvailability` e padrão de rota `/api/availability`. Nome e padrão vêm da rota efetivamente encontrada pelo router, não de headers, parâmetros ou comparação de prefixos de URL. O teste unitário usa o matcher real para construir essa identidade. URLs que o próprio router normalizar para a mesma rota continuam identificadas pela rota encontrada, não por uma segunda implementação de roteamento.
+
+`availability_state_middleware.ts` fornece wrappers nos quatro pontos já existentes de sessão, Shield, inicialização de auth e silent auth. Para todas as demais rotas/métodos, cada wrapper resolve e chama o middleware original pelo container, mantendo bindings, configuração e a ordem original. Os middlewares de servidor e body parser permanecem inalterados. Não há desativação global de sessão, autenticação ou CSRF.
+
+Somente no GET identificado:
+
+1. O wrapper no ponto da sessão executa o limitador antes de inicializar sessão, Shield ou autenticação. Nenhum store é construído, consultado ou confirmado.
+2. Em seguida executa uma nova instância de Shield com cópia da configuração e apenas CSRF desativado para essa requisição. A configuração compartilhada permanece intacta. HSTS, X-Frame-Options e nosniff continuam funcionando, inclusive em 429.
+3. As etapas seguintes dispensam a inicialização original de Shield, auth e silent auth apenas nessa mesma identidade. Não há leitura/renovação da sessão mesmo se o cliente enviar um cookie administrativo válido.
+4. O ponto de rate limiting da rota reconhece o GET já limitado e não o executa novamente. HEAD, que o Adonis associa à rota GET, continua com o fluxo original e seu limitador no ponto original.
+
+Os retornos 200, 422, 429 e 503 do GET não enviam Set-Cookie nem acessam o store de sessão. O rate limiter mantém seu contador em memória por IP; “sem estado” aqui significa ausência de estado de sessão/autenticação, não ausência do contador de proteção contra abuso.
+
+A exceção não abrange HEAD, POST, PUT, PATCH, DELETE, rotas administrativas, `/api/services`, `/api/csrf` ou URLs semelhantes que correspondam a outra rota. **HEAD e outras rotas mantêm inclusive os efeitos de sessão do fluxo legado**; esta correção não promete torná-los sem estado. Autenticação e CSRF em escritas continuam obrigatórios como antes.
+
+As regressões instrumentam o SessionMiddleware original com um store que realmente persiste na tabela `sessions` do SQLite isolado. Para os quatro status públicos, verificam zero construções, leituras, escritas, touch e destroy, tabela vazia, ausência de cookies e presença dos headers de segurança. Também verificam login/logout, cookie administrativo válido, PATCH autenticado com CSRF, rejeição de escritas sem CSRF, fluxo legado de HEAD e independência das outras rotas. Nenhuma instrumentação existe no caminho de produção.
+
 ## Rate limiting
 
-Limite próprio de **60 requisições por IP a cada janela de 60 segundos**, iniciada na primeira consulta daquele IP. Conta consultas válidas e inválidas, antes da validação ou acesso ao calendário. A 61ª e seguintes retornam 429 com Retry-After em segundos e no-store.
+Limite próprio de **60 requisições por IP a cada janela de 60 segundos**, iniciada na primeira consulta daquele IP. Conta consultas válidas e inválidas, antes de sessão/Shield, validação ou acesso ao calendário nesse GET. A 61ª e seguintes retornam 429 com Retry-After em segundos e no-store.
 
 Reutiliza o mecanismo em memória existente, com namespace availability-ip separado. O limite de cadastro de clientes continua 20/minuto e não foi reutilizado. Rotas administrativas, catálogo e demais APIs não recebem esse middleware nem consomem seu orçamento. Um administrador consultando a rota pública está sujeito ao mesmo limite público.
 
@@ -100,6 +121,6 @@ npm run lint
 npm run build
 ```
 
-Os testes novos usam o serviço real e SQLite isolado, com relógio injetado pelo container; não dependem da data atual para calcular disponibilidade. Cobrem acesso sem sessão/CSRF, resultados, fechamentos, pausas/bloqueios/liberações, passado/mesmo dia, bissexto, query estrita, JSON/no-store, privacidade, ausência de gravação de configuração, integração com APIs administrativas reais, orçamento/429 e independência dos outros endpoints. O teste de peer não confiável usa factories existentes do Adonis, sem dependências novas.
+Os testes novos usam o serviço real e SQLite isolado, com relógio injetado pelo container; não dependem da data atual para calcular disponibilidade. Cobrem acesso sem sessão/CSRF, resultados, fechamentos, pausas/bloqueios/liberações, passado/mesmo dia, bissexto, query estrita, JSON/no-store, privacidade, ausência de gravação de configuração, integração com APIs administrativas reais, orçamento/429 e independência dos outros endpoints. O teste de peer não confiável usa factories existentes do Adonis, sem dependências novas. As novas regressões de sessão usam store instrumentado persistido em SQLite isolado e cobrem os retornos 200/422/429/503, headers, cookies, métodos distintos e preservação administrativa/CSRF.
 
 Todas as suítes anteriores são preservadas. A validação completa ocorre em cópia descartável; nenhuma migration é executada no banco de desenvolvimento. Sem frontend, reservas, tabelas novas, notificações, pagamentos ou autenticação de clientes.

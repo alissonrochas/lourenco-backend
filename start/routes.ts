@@ -8,6 +8,7 @@
 */
 
 import { middleware } from '#start/kernel'
+import { PUBLIC_AVAILABILITY_ROUTE } from '#middleware/availability_state_middleware'
 import { controllers } from '#generated/controllers'
 import router from '@adonisjs/core/services/router'
 
@@ -15,6 +16,7 @@ router.on('/').renderInertia('home', {}).as('home')
 
 router
   .get('/api/availability', [() => import('#controllers/availability_controller'), 'index'])
+  .as(PUBLIC_AVAILABILITY_ROUTE)
   .use(middleware.availabilityRateLimit())
 
 router.get('/api/services', [() => import('#controllers/services_controller'), 'index'])
