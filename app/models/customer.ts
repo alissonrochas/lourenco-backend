@@ -11,6 +11,9 @@ export default class Customer extends BaseModel {
   @column()
   declare phone: string
 
+  @column()
+  declare phoneNormalized: string | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

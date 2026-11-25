@@ -5,7 +5,7 @@ export const createCustomerValidator = vine.create({
   phone: vine
     .string()
     .trim()
-    .minLength(10)
-    .maxLength(20)
+    .minLength(8)
+    .maxLength(30)
     .regex(/^[0-9()+\-\s]+$/),
 })

@@ -85,4 +85,10 @@ export const http = defineConfig({
      */
     sameSite: 'lax',
   },
+
+  /**
+   * Only proxy addresses explicitly listed here may provide forwarded IP headers.
+   * Default is loopback, avoiding trust in X-Forwarded-For from arbitrary clients.
+   */
+  trustProxy: env.get('TRUST_PROXY'),
 })

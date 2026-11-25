@@ -30,6 +30,15 @@ export default class HttpExceptionHandler extends ExceptionHandler {
    * response to the client
    */
   async handle(error: unknown, ctx: HttpContext) {
+    const code = (error as { code?: string })?.code
+
+    if (code === 'E_BAD_CSRF_TOKEN' && ctx.request.url().startsWith('/api/')) {
+      return ctx.response.forbidden({
+        code,
+        message: 'Token CSRF inválido ou expirado.',
+      })
+    }
+
     return super.handle(error, ctx)
   }
 
