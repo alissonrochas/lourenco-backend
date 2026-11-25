@@ -31,6 +31,14 @@ router
   .group(() => {
     router.post('/api/admin/logout', [() => import('#controllers/admin_auth_controller'), 'logout'])
     router.get('/api/admin/me', [() => import('#controllers/admin_auth_controller'), 'me'])
+    router.get('/api/admin/calendar-exceptions', [
+      () => import('#controllers/admin_calendar_exceptions_controller'),
+      'index',
+    ])
+    router.post('/api/admin/calendar-exceptions', [
+      () => import('#controllers/admin_calendar_exceptions_controller'),
+      'store',
+    ])
     router.get('/api/admin/booking-settings', [
       () => import('#controllers/admin_booking_settings_controller'),
       'index',
