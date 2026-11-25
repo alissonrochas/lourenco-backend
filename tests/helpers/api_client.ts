@@ -26,7 +26,8 @@ export async function getJson(path: string, cookie = '', accept = 'application/j
   })
 }
 
-export async function postJson(
+async function writeJson(
+  method: 'POST' | 'PATCH',
   path: string,
   data: unknown,
   cookie = '',
@@ -38,7 +39,7 @@ export async function postJson(
   const token = csrfCookie.split(/;\s*/).find((item) => item.startsWith('XSRF-TOKEN='))
   assert.ok(token)
   const response = await fetch(`${baseUrl}${path}`, {
-    method: 'POST',
+    method,
     redirect: 'manual',
     headers: {
       'Content-Type': 'application/json',
@@ -49,4 +50,12 @@ export async function postJson(
     body: JSON.stringify(data),
   })
   return { response, cookie: mergeCookies(csrfCookie, response) }
+}
+
+export function postJson(path: string, data: unknown, cookie = '', accept = 'application/json') {
+  return writeJson('POST', path, data, cookie, accept)
+}
+
+export function patchJson(path: string, data: unknown, cookie = '', accept = 'application/json') {
+  return writeJson('PATCH', path, data, cookie, accept)
 }

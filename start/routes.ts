@@ -37,6 +37,10 @@ router
       () => import('#controllers/admin_services_controller'),
       'show',
     ])
+    router.patch('/api/admin/services/:id', [
+      () => import('#controllers/admin_services_controller'),
+      'update',
+    ])
     router.post('/api/admin/services', [
       () => import('#controllers/admin_services_controller'),
       'store',

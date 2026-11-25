@@ -1,6 +1,6 @@
 import Service from '#models/service'
 import ServiceTransformer from '#transformers/service_transformer'
-import { createServiceValidator } from '#validators/service'
+import { createServiceValidator, updateServiceValidator } from '#validators/service'
 import type { HttpContext } from '@adonisjs/core/http'
 import { errors } from '@vinejs/vine'
 
@@ -51,5 +51,41 @@ export default class AdminServicesController {
     await service.refresh()
     ctx.response.header('Cache-Control', 'no-store')
     return ctx.response.created(await ctx.serialize(ServiceTransformer.transform(service)))
+  }
+
+  async update(ctx: HttpContext) {
+    ctx.response.header('Cache-Control', 'no-store')
+    const id = Number(ctx.params.id)
+    if (!/^[1-9]\d*$/.test(ctx.params.id) || !Number.isSafeInteger(id)) {
+      return ctx.response.notFound({ message: 'Serviço não encontrado.' })
+    }
+    const service = await Service.find(id)
+    if (!service) {
+      return ctx.response.notFound({ message: 'Serviço não encontrado.' })
+    }
+
+    let payload
+    try {
+      payload = await ctx.request.validateUsing(updateServiceValidator)
+    } catch (error) {
+      if (error instanceof errors.E_VALIDATION_ERROR) {
+        return ctx.response.unprocessableEntity({
+          message: 'Dados do serviço inválidos.',
+          errors: error.messages,
+        })
+      }
+      throw error
+    }
+
+    // Only validated business fields can reach Lucid. Omitted fields stay untouched.
+    if (Object.hasOwn(payload, 'name')) service.name = payload.name!
+    if (Object.hasOwn(payload, 'description')) service.description = payload.description ?? null
+    if (Object.hasOwn(payload, 'priceCents')) service.priceCents = payload.priceCents!
+    if (Object.hasOwn(payload, 'durationMinutes'))
+      service.durationMinutes = payload.durationMinutes!
+    if (Object.hasOwn(payload, 'isActive')) service.isActive = payload.isActive!
+    await service.save()
+    await service.refresh()
+    return ctx.serialize(ServiceTransformer.transform(service))
   }
 }
