@@ -13,6 +13,8 @@ import router from '@adonisjs/core/services/router'
 
 router.on('/').renderInertia('home', {}).as('home')
 
+router.get('/api/services', [() => import('#controllers/services_controller'), 'index'])
+
 router
   .post('/api/customers', [() => import('#controllers/customers_controller'), 'store'])
   .use(middleware.customerRateLimit())
