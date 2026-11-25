@@ -1,0 +1,52 @@
+import type { HttpContext } from '@adonisjs/core/http'
+import { errors } from '@vinejs/vine'
+import BookingSettingsService, {
+  InvalidBookingSettingsError,
+} from '#services/booking_settings_service'
+import BookingSettingsTransformer from '#transformers/booking_settings_transformer'
+import { updateBookingSettingsValidator } from '#validators/booking_settings'
+
+export default class AdminBookingSettingsController {
+  private service = new BookingSettingsService()
+
+  private async respond(
+    ctx: HttpContext,
+    operation: () => ReturnType<BookingSettingsService['read']>
+  ) {
+    ctx.response.header('Cache-Control', 'no-store')
+    try {
+      return await ctx.serialize(BookingSettingsTransformer.transform(await operation()))
+    } catch (error) {
+      if (
+        error instanceof errors.E_VALIDATION_ERROR ||
+        error instanceof InvalidBookingSettingsError
+      ) {
+        return ctx.response.unprocessableEntity({ message: 'Configuração semanal inválida.' })
+      }
+      const code = (error as { code?: string }).code ?? ''
+      if (
+        code.startsWith('SQLITE_CONSTRAINT') ||
+        code.startsWith('SQLITE_BUSY') ||
+        code.startsWith('SQLITE_LOCKED')
+      ) {
+        return ctx.response.conflict({
+          message: 'Conflito ao salvar a configuração. Recarregue e tente novamente.',
+        })
+      }
+      throw error
+    }
+  }
+
+  index(ctx: HttpContext) {
+    return this.respond(ctx, () => this.service.read())
+  }
+
+  update(ctx: HttpContext) {
+    return this.respond(ctx, async () => {
+      const payload = await ctx.request.validateUsing(updateBookingSettingsValidator, {
+        data: ctx.request.body(),
+      })
+      return this.service.update(payload)
+    })
+  }
+}
