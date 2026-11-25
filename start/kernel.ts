@@ -52,4 +52,5 @@ export const middleware = router.named({
   adminAuth: () => import('#middleware/admin_auth_middleware'),
   loginRateLimit: () => import('#middleware/login_rate_limit_middleware'),
   customerRateLimit: () => import('#middleware/customer_rate_limit_middleware'),
+  availabilityRateLimit: () => import('#middleware/availability_rate_limit_middleware'),
 })

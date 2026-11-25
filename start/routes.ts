@@ -13,6 +13,10 @@ import router from '@adonisjs/core/services/router'
 
 router.on('/').renderInertia('home', {}).as('home')
 
+router
+  .get('/api/availability', [() => import('#controllers/availability_controller'), 'index'])
+  .use(middleware.availabilityRateLimit())
+
 router.get('/api/services', [() => import('#controllers/services_controller'), 'index'])
 
 router
