@@ -3,8 +3,8 @@ import { test } from '@japa/runner'
 import Customer from '#models/customer'
 import User from '#models/user'
 import { resetRateLimiter } from '#services/rate_limiter'
+import { baseUrl } from '#tests/helpers/api_client'
 
-const baseUrl = 'http://127.0.0.1:3333'
 const publicRegistrationResponse = { message: 'Solicitação recebida.' }
 
 function parseSetCookies(response: Response) {
