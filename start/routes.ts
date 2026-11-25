@@ -31,6 +31,14 @@ router
   .group(() => {
     router.post('/api/admin/logout', [() => import('#controllers/admin_auth_controller'), 'logout'])
     router.get('/api/admin/me', [() => import('#controllers/admin_auth_controller'), 'me'])
+    router.get('/api/admin/booking-settings', [
+      () => import('#controllers/admin_booking_settings_controller'),
+      'index',
+    ])
+    router.patch('/api/admin/booking-settings', [
+      () => import('#controllers/admin_booking_settings_controller'),
+      'update',
+    ])
     router.get('/api/admin/services', [
       () => import('#controllers/admin_services_controller'),
       'index',
