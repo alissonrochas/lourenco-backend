@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from '@japa/runner'
 import db from '@adonisjs/lucid/services/db'
+import env from '#start/env'
 import User from '#models/user'
 import { resetRateLimiter } from '#services/rate_limiter'
 import { baseUrl, getJson, mergeCookies, postJson } from '#tests/helpers/api_client'
@@ -161,7 +162,11 @@ test.group('calendar optimistic preconditions inside writer transaction', (group
     const response = await fetch(`${baseUrl}${weekly}`, {
       method: 'OPTIONS',
       headers: {
-        'Origin': 'http://127.0.0.1:5173',
+        'Origin': env
+          .get('CORS_ALLOWED_ORIGINS')
+          .split(',')
+          .map((origin) => origin.trim())
+          .find(Boolean)!,
         'Access-Control-Request-Method': 'PATCH',
         'Access-Control-Request-Headers': 'content-type,if-match,x-xsrf-token',
       },
