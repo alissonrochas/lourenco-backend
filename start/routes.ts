@@ -40,6 +40,14 @@ router
 router
   .group(() => {
     router.post('/api/admin/logout', [() => import('#controllers/admin_auth_controller'), 'logout'])
+    router.get('/api/admin/bookings', [
+      () => import('#controllers/admin_bookings_controller'),
+      'index',
+    ])
+    router.post('/api/admin/bookings/:id/cancel', [
+      () => import('#controllers/admin_bookings_controller'),
+      'cancel',
+    ])
     router.get('/api/admin/me', [() => import('#controllers/admin_auth_controller'), 'me'])
     router.get('/api/admin/calendar-exceptions', [
       () => import('#controllers/admin_calendar_exceptions_controller'),
