@@ -1,6 +1,6 @@
 # Modelagem e persistência de reservas
 
-> Atualização: existe agora POST /api/bookings; o adapter de disponibilidade desconta confirmed, e alterações de calendário protegem reservas em curso/futuras. Consulte [public-booking-creation-api.md](public-booking-creation-api.md). O texto original abaixo registra o escopo da PR de modelagem.
+> Atualização: existe agora POST /api/bookings; o adapter de disponibilidade desconta confirmed, e alterações de calendário protegem reservas em curso/futuras. Consulte [public-booking-creation-api.md](public-booking-creation-api.md). Consulta e cancelamento administrativos agora seguem [admin-booking-management-api.md](admin-booking-management-api.md). O texto original abaixo registra o escopo da PR de modelagem.
 
 Esta etapa cria somente `bookings` e o model Lucid `Booking`, preparando a futura API de agendamento. Não existem endpoints de criação, cancelamento ou listagem de reservas. Não há seeds, frontend, contas de clientes, pagamentos ou múltiplos barbeiros.
 

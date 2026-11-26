@@ -1,6 +1,6 @@
 # Criação pública de reservas
 
-`POST /api/bookings` confirma um bloco na agenda única, sem login de cliente. Reutiliza os models e a migration de reservas existentes; esta etapa não cria tabelas nem executa migrations no banco de desenvolvimento. Não há cancelamento, reagendamento, listagem ou consulta pública por ID/telefone.
+`POST /api/bookings` confirma um bloco na agenda única, sem login de cliente. Reutiliza os models e a migration de reservas existentes; esta etapa não cria tabelas nem executa migrations no banco de desenvolvimento. Consulta e cancelamento administrativos estão documentados em [admin-booking-management-api.md](admin-booking-management-api.md). Não há reagendamento nem consulta/cancelamento públicos por ID/telefone.
 
 ## Contrato
 
@@ -35,7 +35,7 @@ Exemplo de resposta **201**, `Cache-Control: no-store`:
 }
 ```
 
-O transformer permite somente essas propriedades. Nome/preço são os snapshots gravados; o horário local inclui offset e o fuso é explícito. Não retorna nome, telefone ou ID do cliente, normalização, sessão, IDs administrativos, timestamps de auditoria ou informações de outras reservas. O ID não autentica o cliente e não habilita consulta/cancelamento. Não existe endpoint de leitura de reservas nesta etapa.
+O transformer permite somente essas propriedades. Nome/preço são os snapshots gravados; o horário local inclui offset e o fuso é explícito. Não retorna nome, telefone ou ID do cliente, normalização, sessão, IDs administrativos, timestamps de auditoria ou informações de outras reservas. O ID não autentica o cliente e não habilita consulta/cancelamento. Não existe endpoint público de leitura de reservas.
 
 ## Validação e contato
 
@@ -79,13 +79,13 @@ BookingSettingsService e CalendarExceptionsService mantêm a trava como primeira
 - Funcionamento semanal valida a configuração resultante e usa o motor puro para verificar que cada reserva protegida daquele weekday continua cabendo, sem pausa ou bloqueio recorrente. Não conta a própria ocupação como impedimento.
 - Qualquer conflito recebe 409 JSON/no-store com mensagem administrativa genérica. Reverte todo o payload, inclusive dias/itens anteriores e inicialização do singleton. Não cancela, move ou exclui reservas.
 
-Sem operação de cancelamento nesta etapa, conflitos precisam aguardar a futura gestão administrativa auditada; não usar SQL manual como fluxo de produto. Mudanças de serviço preservam snapshots das reservas anteriores.
+Conflitos podem ser resolvidos pela API administrativa de cancelamento auditado, somente para reservas ainda não iniciadas; não usar SQL manual como fluxo de produto. Mudanças de serviço preservam snapshots das reservas anteriores.
 
 ## Disponibilidade com ocupação
 
 `GET /api/availability?date=YYYY-MM-DD` preserva o contrato anterior. BookingAvailabilityService calcula o calendário pelo motor puro e consulta somente startsAtUtc de reservas confirmed nos inícios candidatos (no máximo 24), usando a mesma transação. Remove esses inícios sem carregar contato, motivos ou auditoria. Não há uma consulta por slot; o máximo passa de cinco para seis SELECTs. Dias fechados ou sem candidatos encerram cedo.
 
-Reservas cancelled não removem slots. Cancelar diretamente nos testes verifica persistência, não cria uma API de cancelamento. A consulta continua informativa: outra confirmação pode ocorrer entre GET e POST; o cliente precisa tratar 409 e recarregar a lista.
+Reservas cancelled não removem slots. O cancelamento pela API administrativa também é testado; não existe cancelamento público. A consulta continua informativa: outra confirmação pode ocorrer entre GET e POST; o cliente precisa tratar 409 e recarregar a lista.
 
 A identidade exata da exceção stateless permanece GET + nome de rota + padrão `/api/availability`. A adição de ocupação não inicializa/persiste sessão nem envia Set-Cookie. Os testes instrumentam o store com persistência real na tabela sessions, inclusive após uma reserva real.
 
