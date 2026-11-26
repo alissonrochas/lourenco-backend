@@ -6,7 +6,7 @@ import logger from '@adonisjs/core/services/logger'
 import emitter from '@adonisjs/core/services/emitter'
 import BookingAvailabilityService from '#services/booking_availability_service'
 import { InvalidAvailabilityInputError } from '#services/booking_availability_engine'
-import { createCalendarDatabase } from '#tests/helpers/calendar_database'
+import { createBookingsDatabase } from '#tests/helpers/bookings_database'
 
 const date = '2026-12-28' // Monday: the isolated fixture has 09:00-18:00, lunch and a 10:00 block.
 const now = DateTime.fromISO('2026-01-01T00:00:00Z')
@@ -19,13 +19,16 @@ async function availableStarts(service: BookingAvailabilityService) {
 
 async function withDatabase(
   run: (
-    temporary: Awaited<ReturnType<typeof createCalendarDatabase>>,
+    temporary: Awaited<ReturnType<typeof createBookingsDatabase>>,
     service: BookingAvailabilityService
   ) => Promise<void>
 ) {
-  const temporary = await createCalendarDatabase()
+  const temporary = await createBookingsDatabase()
   try {
     await temporary.up()
+    // This adapter now reads actual occupancy; apply the real bookings migration.
+    await temporary.client.from('date_slot_blocks').delete()
+    await temporary.client.from('date_blocks').delete()
     await run(temporary, new BookingAvailabilityService(temporary.client))
   } finally {
     await temporary.cleanup()
@@ -106,7 +109,7 @@ test.group('booking availability persistence', () => {
     })
   })
 
-  test('calculation performs no writes and at most five selects in one transaction regardless of slot count', async () => {
+  test('calculation performs no writes and at most six selects in one transaction regardless of slot count', async () => {
     await withDatabase(async (temporary, service) => {
       await temporary.client.from('booking_settings').delete()
       const before = await temporary.existingState()
@@ -126,7 +129,7 @@ test.group('booking availability persistence', () => {
         false
       )
       const selects = queries.filter((query) => /^select\b/i.test(query.sql))
-      assert.equal(selects.length, 5)
+      assert.equal(selects.length, 6)
       assert.equal(new Set(selects.map((query) => query.__knexTxId)).size, 1)
       assert.ok(selects.every((query) => typeof query.__knexTxId === 'string'))
       assert.equal(

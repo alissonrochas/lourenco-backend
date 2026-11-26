@@ -1,3 +1,4 @@
+import { BookingCalendarConflictError } from '#services/booking_calendar_protection'
 import type { HttpContext } from '@adonisjs/core/http'
 import { errors } from '@vinejs/vine'
 import BookingSettingsService, {
@@ -23,6 +24,11 @@ export default class AdminBookingSettingsController {
       ) {
         return ctx.response.unprocessableEntity({ message: 'Configuração semanal inválida.' })
       }
+      if (error instanceof BookingCalendarConflictError)
+        return ctx.response.conflict({
+          message:
+            'A alteração conflita com reservas confirmadas. Resolva as reservas antes de alterar o calendário.',
+        })
       const code = (error as { code?: string }).code ?? ''
       if (
         code.startsWith('SQLITE_CONSTRAINT') ||

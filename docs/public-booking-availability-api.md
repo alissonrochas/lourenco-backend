@@ -51,7 +51,7 @@ Esse exemplo não define expediente padrão nem garante que a data esteja dispon
 
 Controller valida a query com VineJS e o validador de calendário real existente, chama BookingAvailabilityService e serializa com PublicAvailabilityTransformer. O motor permanece intacto: dia da semana, pausas, bloqueios, UTC e passado são calculados somente por ele. Não há serviceId ou consulta de catálogo.
 
-Não há escrita de configuração, criação de clientes, persistência de disponibilidade ou cache do resultado. As consultas usam o snapshot do serviço existente. Alterações administrativas passam a afetar consultas seguintes automaticamente, sem reconstrução de cache. O GET dessa rota é sem estado de sessão: não inicializa sessão/autenticação, não gera segredo CSRF nem envia cookies de sessão/XSRF. Os outros endpoints preservam o fluxo original, conforme a estratégia abaixo.
+Não há escrita de configuração, criação de clientes, persistência de disponibilidade ou cache do resultado. Calendário e ocupação usam o mesmo snapshot do serviço; somente os inícios UTC ocupados são consultados, sem dados pessoais. Reservas cancelled não retiram horários. Alterações administrativas passam a afetar consultas seguintes automaticamente, sem reconstrução de cache. O GET dessa rota é sem estado de sessão: não inicializa sessão/autenticação, não gera segredo CSRF nem envia cookies de sessão/XSRF. Os outros endpoints preservam o fluxo original, conforme a estratégia abaixo.
 
 A resposta JSON não contém motivos administrativos, IDs de configuração, clientes, sessões, tokens, timestamps internos ou detalhes do banco. Razões de fechamento também não são publicadas; slots vazio é suficiente. Erros inesperados são registrados no servidor e convertidos em mensagem pública genérica, sem stack/SQL na resposta.
 
@@ -110,7 +110,7 @@ Consultar novamente ao selecionar uma data e atualizar a lista com a resposta ma
 
 Exibir horários locais no fuso informado, sem parse de startsAtLocal como UTC. Para 422, corrigir entrada; para 429, respeitar Retry-After; para 503, oferecer nova tentativa. Não armazenar a resposta como garantia de vaga nem apresentar confirmação de agendamento.
 
-**A disponibilidade é informativa: ainda não considera reservas, não constitui reserva e não garante vaga.** Na futura confirmação, o frontend deverá tratar conflitos e recarregar horários. A API de reservas revalidará serviço ativo, calendário e ocupação dentro de transação protegida e constraint de unicidade. Essa criação de reservas não existe nesta PR.
+**A disponibilidade considera reservas confirmed, mas é informativa e não garante vaga.** O frontend deverá tratar conflitos e recarregar horários. POST /api/bookings revalida serviço ativo, calendário e ocupação dentro de transação protegida pela trava SQLite e constraint de unicidade; consulte [public-booking-creation-api.md](public-booking-creation-api.md).
 
 ## Verificação
 
@@ -123,4 +123,4 @@ npm run build
 
 Os testes novos usam o serviço real e SQLite isolado, com relógio injetado pelo container; não dependem da data atual para calcular disponibilidade. Cobrem acesso sem sessão/CSRF, resultados, fechamentos, pausas/bloqueios/liberações, passado/mesmo dia, bissexto, query estrita, JSON/no-store, privacidade, ausência de gravação de configuração, integração com APIs administrativas reais, orçamento/429 e independência dos outros endpoints. O teste de peer não confiável usa factories existentes do Adonis, sem dependências novas. As novas regressões de sessão usam store instrumentado persistido em SQLite isolado e cobrem os retornos 200/422/429/503, headers, cookies, métodos distintos e preservação administrativa/CSRF.
 
-Todas as suítes anteriores são preservadas. A validação completa ocorre em cópia descartável; nenhuma migration é executada no banco de desenvolvimento. Sem frontend, reservas, tabelas novas, notificações, pagamentos ou autenticação de clientes.
+Todas as suítes anteriores são preservadas. A validação completa ocorre em cópia descartável; nenhuma migration é executada no banco de desenvolvimento. Esta consulta não cria reservas. Sem frontend, tabelas novas, notificações, pagamentos ou autenticação de clientes.

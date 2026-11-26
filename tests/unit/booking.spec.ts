@@ -441,12 +441,12 @@ test.group('Booking model persistence', () => {
           { client: trx }
         )
         assert.equal(booking.startsAtUtc, start)
-        // Occupancy integration is deliberately not implemented: this remains eligible.
+        // The adapter excludes occupancy within this same uncommitted transaction.
         const after = await service.calculate('2026-12-28', {
           now: DateTime.fromISO('2026-01-01T00:00:00Z'),
           client: trx,
         })
-        assert.deepEqual(after, result)
+        assert.deepEqual(after, { ...result, slots: result.slots.slice(1) })
         const leapStart = DateTime.fromISO('2028-03-01T02:00:00Z').toMillis()
         await Booking.create(
           {

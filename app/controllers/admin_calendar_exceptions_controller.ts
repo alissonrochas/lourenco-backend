@@ -1,3 +1,4 @@
+import { BookingCalendarConflictError } from '#services/booking_calendar_protection'
 import type { HttpContext } from '@adonisjs/core/http'
 import { errors } from '@vinejs/vine'
 import CalendarExceptionsService from '#services/calendar_exceptions_service'
@@ -24,6 +25,11 @@ export default class AdminCalendarExceptionsController {
       )
         return ctx.response.unprocessableEntity({
           message: 'Exceção ou intervalo de calendário inválido.',
+        })
+      if (error instanceof BookingCalendarConflictError)
+        return ctx.response.conflict({
+          message:
+            'A alteração conflita com reservas confirmadas. Resolva as reservas antes de alterar o calendário.',
         })
       const code = (error as { code?: string }).code ?? ''
       if (

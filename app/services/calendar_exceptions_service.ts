@@ -1,3 +1,5 @@
+import { DateTime } from 'luxon'
+import { protectDateBookings } from '#services/booking_calendar_protection'
 import db from '@adonisjs/lucid/services/db'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import DateBlock from '#models/date_block'
@@ -10,7 +12,10 @@ type TransactionSource = {
 }
 
 export default class CalendarExceptionsService {
-  constructor(private database: TransactionSource = db) {}
+  constructor(
+    private database: TransactionSource = db,
+    private clock: () => DateTime = () => DateTime.utc()
+  ) {}
 
   private async load(trx: TransactionClientContract, from: string, to: string) {
     const dateBlocks = await DateBlock.query({ client: trx })
@@ -30,9 +35,8 @@ export default class CalendarExceptionsService {
   save(input: CalendarExceptionInput) {
     return this.database.transaction(async (trx) => {
       // Same writer-lock strategy as weekly settings, including an absent singleton.
-      // Future confirmed-booking conflict checks belong HERE, after this lock and
-      // before any exception is saved, in this same transaction. No bookings exist yet.
       await trx.from('booking_settings').where('id', 1).update({ id: 1 })
+      await protectDateBookings(trx, input, this.clock())
       if (input.dayBlock) {
         let record = await DateBlock.query({ client: trx })
           .where('localDate', input.localDate)

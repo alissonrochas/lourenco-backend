@@ -1,5 +1,7 @@
 # Motor de disponibilidade da agenda
 
+> Atualização: o motor puro permanece independente de reservas. BookingAvailabilityService agora desconta ocupação confirmed no mesmo snapshot, com até seis SELECTs; POST /api/bookings revalida sob trava de escrita. Consulte [public-booking-creation-api.md](public-booking-creation-api.md). O escopo original do motor está registrado abaixo.
+
 Esta etapa implementa somente cálculo e leitura de regras persistidas. Não cria rotas, migrations, tabelas, reservas ou frontend. Segue [booking-mvp-plan.md](booking-mvp-plan.md), [booking-schedule-model.md](booking-schedule-model.md), [admin-booking-settings-api.md](admin-booking-settings-api.md) e [admin-calendar-exceptions-api.md](admin-calendar-exceptions-api.md).
 
 ## Arquitetura

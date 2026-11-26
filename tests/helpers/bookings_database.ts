@@ -20,7 +20,7 @@ const existingMigrations = [
 ]
 const bookingsMigration = '1795824000000_create_bookings_table'
 
-export async function createBookingsDatabase() {
+export async function createBookingsDatabase(connectionName = 'bookings_test') {
   const directory = mkdtempSync(join(tmpdir(), 'lourenco-bookings-'))
   const migrationsDirectory = join(directory, 'migrations')
   mkdirSync(migrationsDirectory)
@@ -39,9 +39,9 @@ export async function createBookingsDatabase() {
   // No connection from the application's database manager is registered or changed.
   const database = new Database(
     {
-      connection: 'bookings_test',
+      connection: connectionName,
       connections: {
-        bookings_test: {
+        [connectionName]: {
           client: 'better-sqlite3',
           connection: { filename: join(directory, 'test.sqlite3') },
           useNullAsDefault: true,
