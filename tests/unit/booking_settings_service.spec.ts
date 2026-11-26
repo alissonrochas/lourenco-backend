@@ -8,7 +8,7 @@ import BookingSettingsService, {
   InvalidBookingSettingsError,
 } from '#services/booking_settings_service'
 import { updateBookingSettingsValidator } from '#validators/booking_settings'
-import { createScheduleDatabase } from '#tests/helpers/schedule_database'
+import { createBookingsDatabase } from '#tests/helpers/bookings_database'
 
 const day = { isActive: true, opensAtMinute: 540, closesAtMinute: 1080, breaks: [], slotBlocks: [] }
 const pause = { startsAtMinute: 720, endsAtMinute: 780, isActive: true }
@@ -63,9 +63,18 @@ test.group('weekly configuration effective validation', () => {
 
 test.group('weekly configuration transactions', () => {
   test('read on an empty temporary database does not create settings or days', async () => {
-    const temporary = await createScheduleDatabase()
+    const temporary = await createBookingsDatabase()
     try {
       await temporary.up()
+      for (const table of [
+        'date_slot_blocks',
+        'date_blocks',
+        'weekly_slot_blocks',
+        'weekly_breaks',
+        'weekly_opening_hours',
+        'booking_settings',
+      ])
+        await temporary.client.from(table).delete()
       const service = new BookingSettingsService(temporary.client)
       const result = await service.read()
       assert.equal(result.settings, null)
@@ -78,10 +87,19 @@ test.group('weekly configuration transactions', () => {
   })
 
   test('a writer on an independent SQLite connection prevents stale reads and partial writes', async () => {
-    const temporary = await createScheduleDatabase()
+    const temporary = await createBookingsDatabase()
     let other: Database | undefined
     try {
       await temporary.up()
+      for (const table of [
+        'date_slot_blocks',
+        'date_blocks',
+        'weekly_slot_blocks',
+        'weekly_breaks',
+        'weekly_opening_hours',
+        'booking_settings',
+      ])
+        await temporary.client.from(table).delete()
       other = new Database(
         {
           connection: 'concurrent',

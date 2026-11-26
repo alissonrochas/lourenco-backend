@@ -1,5 +1,7 @@
 # Plano técnico da agenda do MVP
 
+> A criação pública e a proteção transacional de reservas nas alterações de calendário estão implementadas nesta etapa; consulte [public-booking-creation-api.md](public-booking-creation-api.md). As propostas abaixo preservam o histórico do planejamento.
+
 Este documento é uma proposta para próximas PRs. Nenhuma tabela ou API de agenda descrita aqui existe nesta etapa. A implementação atual acrescenta somente `GET /api/services`.
 
 ## Regras confirmadas

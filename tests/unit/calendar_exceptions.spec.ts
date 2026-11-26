@@ -12,6 +12,7 @@ import {
   InvalidCalendarExceptionError,
 } from '#services/calendar_exception_rules'
 import { saveCalendarExceptionValidator } from '#validators/calendar_exception'
+import { createBookingsDatabase } from '#tests/helpers/bookings_database'
 import { createCalendarDatabase } from '#tests/helpers/calendar_database'
 
 const timestamp = '2026-11-25 00:00:00'
@@ -244,10 +245,11 @@ test.group('calendar exception migration and models', () => {
   })
 
   test('an independent SQLite writer blocks the service before it reads or saves exceptions', async () => {
-    const temporary = await createCalendarDatabase()
+    const temporary = await createBookingsDatabase()
     let other: Database | undefined
     try {
       await temporary.up()
+      await temporary.client.from('date_blocks').delete()
       other = new Database(
         {
           connection: 'concurrent',

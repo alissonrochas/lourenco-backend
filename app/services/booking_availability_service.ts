@@ -4,6 +4,7 @@ import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import WeeklyOpeningHour from '#models/weekly_opening_hour'
 import WeeklyBreak from '#models/weekly_break'
 import WeeklySlotBlock from '#models/weekly_slot_block'
+import Booking from '#models/booking'
 import DateBlock from '#models/date_block'
 import DateSlotBlock from '#models/date_slot_block'
 import {
@@ -61,10 +62,24 @@ export default class BookingAvailabilityService {
           .where('isBlocked', true)
           .select(['startsAtMinute', 'isBlocked'])
       }
-      // Future reservation code must exclude confirmed bookings HERE using this same
-      // client, then revalidate and persist under a writer lock + unique constraint.
-      // This engine does not currently query occupancy or prevent duplicate bookings.
-      return calculateBookingAvailability(localDate, rules, now)
+      const result = calculateBookingAvailability(localDate, rules, now)
+      if (result.slots.length === 0) return result
+      // Calendar and occupancy share the same snapshot, including uncommitted writes.
+      // Select only UTC starts (no identity, customer, audit or administrative fields).
+      const occupied = await Booking.query({ client })
+        .where('status', 'confirmed')
+        .whereIn(
+          'startsAtUtc',
+          result.slots.map((slot) => DateTime.fromISO(slot.startsAtUtc).toMillis())
+        )
+        .select('startsAtUtc')
+      const starts = new Set(occupied.map((booking) => booking.startsAtUtc))
+      return {
+        ...result,
+        slots: result.slots.filter(
+          (slot) => !starts.has(DateTime.fromISO(slot.startsAtUtc).toMillis())
+        ),
+      }
     }
     // An external transaction is neither committed nor rolled back by this service.
     return options.client ? read(options.client) : this.database.transaction(read)

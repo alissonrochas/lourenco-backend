@@ -1,3 +1,5 @@
+import { DateTime } from 'luxon'
+import { protectWeeklyBookings } from '#services/booking_calendar_protection'
 import db from '@adonisjs/lucid/services/db'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
 import BookingSetting from '#models/booking_setting'
@@ -78,7 +80,10 @@ export function assertValidScheduleDay(day: ScheduleDay) {
 }
 
 export default class BookingSettingsService {
-  constructor(private database: TransactionSource = db) {}
+  constructor(
+    private database: TransactionSource = db,
+    private clock: () => DateTime = () => DateTime.utc()
+  ) {}
 
   private async load(trx: TransactionClientContract) {
     const settings = await BookingSetting.find(1, { client: trx })
@@ -174,6 +179,18 @@ export default class BookingSettingsService {
           breaks,
           slotBlocks: blocks,
         })
+        await protectWeeklyBookings(
+          trx,
+          patch.weekday,
+          {
+            weekly: day,
+            breaks,
+            weeklySlotBlocks: blocks,
+            dateBlocked: false,
+            dateSlotBlocks: [],
+          },
+          this.clock()
+        )
         await day.save()
         for (const item of breaks) {
           item.weeklyOpeningHourId = day.id

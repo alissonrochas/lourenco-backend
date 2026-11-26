@@ -1,3 +1,5 @@
+import BookingCreationService from '#services/booking_creation_service'
+import Service from '#models/service'
 import assert from 'node:assert/strict'
 import { DateTime } from 'luxon'
 import { test } from '@japa/runner'
@@ -39,6 +41,7 @@ test.group('stateless availability with instrumented SQLite session store', (gro
     assert.equal(config?.client, 'better-sqlite3')
     assert.equal((config as { connection: { filename: string } }).connection.filename, ':memory:')
     for (const table of [
+      'bookings',
       'sessions',
       'date_slot_blocks',
       'date_blocks',
@@ -98,7 +101,8 @@ test.group('stateless availability with instrumented SQLite session store', (gro
     )
     resetRateLimiter()
   })
-  group.each.teardown(() => {
+  group.each.teardown(async () => {
+    await db.from('bookings').delete()
     app.container.restore(SessionMiddleware)
     app.container.restore(BookingAvailabilityService)
   })
@@ -114,6 +118,36 @@ test.group('stateless availability with instrumented SQLite session store', (gro
     await verifyPublic(response, 200)
     const body = (await response.json()) as { data: { slots: unknown[] } }
     assert.equal(body.data.slots.length, 2)
+  })
+
+  test('real booking occupancy is filtered without constructing or persisting a public session', async () => {
+    await WeeklyOpeningHour.create({
+      weekday: 5,
+      isActive: true,
+      opensAtMinute: 540,
+      closesAtMinute: 660,
+    })
+    const service = await Service.create({
+      name: 'Serviço isolado',
+      description: null,
+      priceCents: 5000,
+      durationMinutes: 30,
+      isActive: true,
+    })
+    await new BookingCreationService(db, () => DateTime.fromISO('2026-01-01T00:00:00Z')).create({
+      serviceId: service.id,
+      localDate: '2026-12-25',
+      startsAtMinute: 540,
+      name: 'Privado',
+      phone: '71998877665',
+    })
+    const response = await getJson(path)
+    await verifyPublic(response, 200)
+    const body = (await response.json()) as { data: { slots: Array<{ startsAtMinute: number }> } }
+    assert.deepEqual(
+      body.data.slots.map((slot) => slot.startsAtMinute),
+      [600]
+    )
   })
 
   test('422 never initializes or persists a session, even with Accept HTML', async () => {

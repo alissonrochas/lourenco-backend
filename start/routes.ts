@@ -19,6 +19,10 @@ router
   .as(PUBLIC_AVAILABILITY_ROUTE)
   .use(middleware.availabilityRateLimit())
 
+router
+  .post('/api/bookings', [() => import('#controllers/bookings_controller'), 'store'])
+  .use(middleware.bookingRateLimit())
+
 router.get('/api/services', [() => import('#controllers/services_controller'), 'index'])
 
 router
