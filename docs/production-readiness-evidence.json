@@ -1,0 +1,409 @@
+{
+  "date": "2026-11-26",
+  "backendCommit": "15fda381bd1faa83775b7fe59f2f0cc41a74abd0",
+  "frontendCommit": "0af252f9191b625cdfbbc3500305604b20008d86",
+  "node": "24.19.0",
+  "playwright": "1.65.1",
+  "chrome": "155.0.8059.79",
+  "findings": {
+    "P0": 0,
+    "P1": 5,
+    "P2": 10,
+    "P3": 2
+  },
+  "checks": {
+    "frontendTests": 216,
+    "backendUnit": 100,
+    "backendFunctional": 169,
+    "regressionE2E": 44,
+    "additionalFocusedRun": 9,
+    "newAuditScenarios": 6,
+    "repeatedRegressionScenarios": 3,
+    "finalTestFailures": 0,
+    "backendTypecheckExit": 2,
+    "preexistingInertiaDiagnostics": 8
+  },
+  "probes": {
+    "database_session": {
+      "rotated": true,
+      "oldGuestRejected": true,
+      "logoutReplayStatus": 401,
+      "cache": {
+        "/api/admin/me": null,
+        "/api/customers": null,
+        "/api/admin/services": "no-store"
+      }
+    },
+    "cookie_store": {
+      "copiedCookieReplayAfterLogout": 200,
+      "condition": "SESSION_DRIVER=cookie; attacker already holds valid session cookies"
+    },
+    "public_abuse": {
+      "acceptedBefore429": 10,
+      "confirmed": 10,
+      "samePhone": true,
+      "farFutureAvailability200": true,
+      "farFutureSlots": 7
+    },
+    "anonymous_sessions": {
+      "requests": 20,
+      "created": 20,
+      "all200": true
+    },
+    "sqlite": {
+      "flags": {
+        "journal_mode": "delete",
+        "foreign_keys": 1,
+        "busy_timeout": 5000,
+        "synchronous": 2,
+        "sqliteVersion": "3.54.1"
+      },
+      "disposableBackupIntegrity": "ok",
+      "restoredBookings": 1
+    },
+    "blocked_login_memory": {
+      "sameIP": true,
+      "additionalRequestsAll429": 40,
+      "additionalRetainedKeys": 40,
+      "instrumentation": "counter only in disposable copy"
+    }
+  },
+  "staticExperiment": {
+    "limiterExpiredRetention": {
+      "expiredInserted": 10000,
+      "retainedAfterExpiration": 10001
+    }
+  },
+  "productionModeExperiment": {
+    "mode": "production",
+    "transport": "isolated loopback HTTP; TLS not validated",
+    "rootStatus": 200,
+    "legacyRootHasMissingRouteError": true,
+    "legacyRootPageErrorCount": 1,
+    "publicServicesBeforeFault": 200,
+    "secureCookieFlagEmitted": true,
+    "unhandledPublicServicesFault": {
+      "status": 500,
+      "contentType": "application/json; charset=utf-8",
+      "isJson": true,
+      "exposesSqlOrStack": false
+    },
+    "defaultAcceptFailure": {
+      "status": 500,
+      "contentType": "text/html; charset=utf-8"
+    },
+    "customerFault": {
+      "status": 500,
+      "canaryInClientResponse": false,
+      "canaryInServerLog": true
+    }
+  },
+  "bundle": {
+    "builtJsModules": 87,
+    "vulnerableToolJsModulesInBrowser": 0,
+    "sourceCssUsesShadcn": true,
+    "syntheticApiUrl": true,
+    "limitations": "synthetic environment; actual production bundle/environment not supplied"
+  },
+  "cleanBackend": {
+    "build": 0,
+    "typecheck": 2,
+    "dummyDatabaseRemovedByBuild": true,
+    "noUntrackedTypeShim": true
+  },
+  "npmAudits": {
+    "backend-all": {
+      "exit": 0,
+      "metadata": {
+        "vulnerabilities": {
+          "info": 0,
+          "low": 0,
+          "moderate": 0,
+          "high": 0,
+          "critical": 0,
+          "total": 0
+        },
+        "dependencies": {
+          "prod": 381,
+          "dev": 296,
+          "optional": 56,
+          "peer": 2,
+          "peerOptional": 0,
+          "total": 722
+        }
+      },
+      "error": null,
+      "packages": []
+    },
+    "backend-production": {
+      "exit": 0,
+      "metadata": {
+        "vulnerabilities": {
+          "info": 0,
+          "low": 0,
+          "moderate": 0,
+          "high": 0,
+          "critical": 0,
+          "total": 0
+        },
+        "dependencies": {
+          "prod": 381,
+          "dev": 296,
+          "optional": 56,
+          "peer": 2,
+          "peerOptional": 0,
+          "total": 722
+        }
+      },
+      "error": null,
+      "packages": []
+    },
+    "frontend-all": {
+      "exit": 1,
+      "metadata": {
+        "vulnerabilities": {
+          "info": 0,
+          "low": 0,
+          "moderate": 4,
+          "high": 0,
+          "critical": 0,
+          "total": 4
+        },
+        "dependencies": {
+          "prod": 254,
+          "dev": 169,
+          "optional": 90,
+          "peer": 10,
+          "peerOptional": 0,
+          "total": 422
+        }
+      },
+      "error": null,
+      "packages": [
+        {
+          "name": "@ts-morph/common",
+          "severity": "moderate",
+          "isDirect": false,
+          "range": "0.19.0 - 0.29.0",
+          "fixAvailable": true,
+          "via": [
+            "minimatch"
+          ],
+          "effects": [
+            "ts-morph"
+          ],
+          "nodes": [
+            "node_modules/@ts-morph/common"
+          ]
+        },
+        {
+          "name": "minimatch",
+          "severity": "moderate",
+          "isDirect": false,
+          "range": "7.0.0 - 11.0.0",
+          "fixAvailable": true,
+          "via": [
+            {
+              "source": 1244623,
+              "name": "minimatch",
+              "dependency": "minimatch",
+              "title": "minimatch has potential denial of service via globparts amplification",
+              "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+              "severity": "moderate",
+              "cwe": [
+                "CWE-405"
+              ],
+              "cvss": {
+                "score": 0,
+                "vectorString": null
+              },
+              "range": ">=7.0.0 <11.0.1"
+            }
+          ],
+          "effects": [
+            "@ts-morph/common"
+          ],
+          "nodes": [
+            "node_modules/minimatch"
+          ]
+        },
+        {
+          "name": "shadcn",
+          "severity": "moderate",
+          "isDirect": true,
+          "range": "<=0.0.0-rc-20261007105214 || 2.0.0 - 4.23.0",
+          "fixAvailable": true,
+          "via": [
+            "ts-morph"
+          ],
+          "effects": [],
+          "nodes": [
+            "node_modules/shadcn"
+          ]
+        },
+        {
+          "name": "ts-morph",
+          "severity": "moderate",
+          "isDirect": false,
+          "range": "18.0.0 - 27.0.2",
+          "fixAvailable": true,
+          "via": [
+            "@ts-morph/common"
+          ],
+          "effects": [
+            "shadcn"
+          ],
+          "nodes": [
+            "node_modules/ts-morph"
+          ]
+        }
+      ]
+    },
+    "frontend-production": {
+      "exit": 1,
+      "metadata": {
+        "vulnerabilities": {
+          "info": 0,
+          "low": 0,
+          "moderate": 4,
+          "high": 0,
+          "critical": 0,
+          "total": 4
+        },
+        "dependencies": {
+          "prod": 254,
+          "dev": 169,
+          "optional": 90,
+          "peer": 10,
+          "peerOptional": 0,
+          "total": 422
+        }
+      },
+      "error": null,
+      "packages": [
+        {
+          "name": "@ts-morph/common",
+          "severity": "moderate",
+          "isDirect": false,
+          "range": "0.19.0 - 0.29.0",
+          "fixAvailable": true,
+          "via": [
+            "minimatch"
+          ],
+          "effects": [
+            "ts-morph"
+          ],
+          "nodes": [
+            "node_modules/@ts-morph/common"
+          ]
+        },
+        {
+          "name": "minimatch",
+          "severity": "moderate",
+          "isDirect": false,
+          "range": "7.0.0 - 11.0.0",
+          "fixAvailable": true,
+          "via": [
+            {
+              "source": 1244623,
+              "name": "minimatch",
+              "dependency": "minimatch",
+              "title": "minimatch has potential denial of service via globparts amplification",
+              "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+              "severity": "moderate",
+              "cwe": [
+                "CWE-405"
+              ],
+              "cvss": {
+                "score": 0,
+                "vectorString": null
+              },
+              "range": ">=7.0.0 <11.0.1"
+            }
+          ],
+          "effects": [
+            "@ts-morph/common"
+          ],
+          "nodes": [
+            "node_modules/minimatch"
+          ]
+        },
+        {
+          "name": "shadcn",
+          "severity": "moderate",
+          "isDirect": true,
+          "range": "<=0.0.0-rc-20261007105214 || 2.0.0 - 4.23.0",
+          "fixAvailable": true,
+          "via": [
+            "ts-morph"
+          ],
+          "effects": [],
+          "nodes": [
+            "node_modules/shadcn"
+          ]
+        },
+        {
+          "name": "ts-morph",
+          "severity": "moderate",
+          "isDirect": false,
+          "range": "18.0.0 - 27.0.2",
+          "fixAvailable": true,
+          "via": [
+            "@ts-morph/common"
+          ],
+          "effects": [
+            "shadcn"
+          ],
+          "nodes": [
+            "node_modules/ts-morph"
+          ]
+        }
+      ]
+    }
+  },
+  "logDigests": {
+    "real-e2e-backend-tests.log": "4587317810ce01995f0a3f7058000c8ac2975be12739c0005e004b422be94ee7",
+    "real-e2e-backend-lint.log": "89f3a91ffb3f0b161140168bfb0d4111c90154babe45e2400a0d083090edb09c",
+    "real-e2e-backend-typecheck.log": "1588a43f9b4786b3b104c5e3653a3e1a06360f0942d7ab84c3303a55d60eddb8",
+    "real-e2e-backend-build.log": "fd69c2a546086a5f4bde8788013699551b72bb8bbf7e694fa8e0b904c2029f11",
+    "audit-front-tests.log": "1827e1933d9f4b83312b60eeeb206d0d13c7442f25446474db3f1e965eb4400f",
+    "audit-front-lint.log": "e66274aa76e3ccd00d99d152f3ae5c9e716eee1dcb09c6a748aa23e8fed1b890",
+    "audit-front-typecheck.log": "5d4b8066a365fdc34dfcd6cd73f9b54e290a41644282251614a74029105e238e",
+    "audit-front-build.log": "727b990e2d4d48f6ddbf3b379279c2a215cd39541374cea70658c21e2e783331",
+    "audit-e2e-full.log": "84b3b48be7c6ea161bf11c8404b973c5861ecd5b7ebf0cbfe1422045f5641356",
+    "audit-probes-final.log": "33c9d6f3d5d2ead58ea6afff7c7771165bfe75cbc9fb95f51e8d68b7621f1dc9",
+    "audit-production-probe.log": "6962e910b84afbfc63149cbd19d5ab893a9fbedc1aff9c0d09ae130473259e28"
+  },
+  "originalDatabaseSha256": "cea95f27de3c157bff456a5aab8152c26b88de8ead86008c4edf2bea74ffdbe6",
+  "originalsPreserved": true,
+  "scopeLimits": [
+    "No actual deployment, TLS, firewall or external backup supplied",
+    "No fresh installation of all dependencies",
+    "No full-history dedicated secret scan",
+    "Synthetic bundle; final production bundle requires inspection",
+    "Cookie replay requires prior possession of valid cookies and cookie store"
+  ],
+  "preservationVerification": {
+    "backend": {
+      "protectedFilesUnchanged": true,
+      "previousBranchesUnchanged": true,
+      "limitedCurrentTreePatternScan": []
+    },
+    "frontend": {
+      "protectedFilesUnchanged": true,
+      "previousBranchesUnchanged": true,
+      "limitedCurrentTreePatternScan": []
+    }
+  },
+  "patternScanScope": "Limited current-tree patterns; no full-history secret scanner",
+  "installedDirectDependencyCheck": {
+    "backend": {
+      "checked": 44,
+      "mismatches": []
+    },
+    "frontend": {
+      "checked": 26,
+      "mismatches": []
+    }
+  }
+}
