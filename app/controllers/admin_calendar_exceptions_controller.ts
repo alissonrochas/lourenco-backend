@@ -1,3 +1,8 @@
+import {
+  calendarTag,
+  StaleCalendarError,
+  InvalidCalendarPreconditionError,
+} from '#services/calendar_precondition'
 import { BookingCalendarConflictError } from '#services/booking_calendar_protection'
 import type { HttpContext } from '@adonisjs/core/http'
 import { errors } from '@vinejs/vine'
@@ -19,6 +24,12 @@ export default class AdminCalendarExceptionsController {
     try {
       return await ctx.serialize(CalendarExceptionsTransformer.transform(await operation()))
     } catch (error) {
+      if (error instanceof InvalidCalendarPreconditionError)
+        return ctx.response.unprocessableEntity({ message: 'Revisão de calendário inválida.' })
+      if (error instanceof StaleCalendarError)
+        return ctx.response.conflict({
+          message: 'O calendário foi alterado por outra operação. Recarregue antes de salvar.',
+        })
       if (
         error instanceof errors.E_VALIDATION_ERROR ||
         error instanceof InvalidCalendarExceptionError
@@ -48,7 +59,9 @@ export default class AdminCalendarExceptionsController {
       const query = await ctx.request.validateUsing(calendarExceptionsQueryValidator, {
         data: ctx.request.qs(),
       })
-      return this.service.read(query.from, query.to)
+      const result = await this.service.read(query.from, query.to)
+      ctx.response.header('ETag', calendarTag(result, `dates:${query.from}:${query.to}`))
+      return result
     })
   }
   store(ctx: HttpContext) {
@@ -56,7 +69,12 @@ export default class AdminCalendarExceptionsController {
       const input = await ctx.request.validateUsing(saveCalendarExceptionValidator, {
         data: ctx.request.body(),
       })
-      return this.service.save(input)
+      const result = await this.service.save(input, ctx.request.header('if-match'))
+      ctx.response.header(
+        'ETag',
+        calendarTag(result, `dates:${input.localDate}:${input.localDate}`)
+      )
+      return result
     })
   }
 }

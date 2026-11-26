@@ -1,5 +1,7 @@
 # API administrativa de funcionamento semanal
 
+> Etapa 8: GET/escritas retornam ETag; If-Match opcional é verificado dentro da transação. O painel novo exige a revisão. Veja [calendar-concurrency.md](calendar-concurrency.md).
+
 > Atualização: alterações que atinjam reservas confirmed ainda não encerradas são recusadas com 409 JSON/no-store, sob a mesma trava de escrita. Inclui reservas em curso; todo o payload é revertido. Consulte [public-booking-creation-api.md](public-booking-creation-api.md).
 
 Esta etapa expõe somente `GET` e `PATCH /api/admin/booking-settings`. Reutiliza os quatro models de [booking-schedule-model.md](booking-schedule-model.md) e segue [booking-mvp-plan.md](booking-mvp-plan.md). Sem migrations novas, reservas, disponibilidade pública ou frontend.

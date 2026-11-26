@@ -1,5 +1,7 @@
 # API administrativa de exceções de calendário
 
+> Etapa 8: GET/escritas retornam ETag; If-Match opcional é verificado dentro da transação. O painel novo exige a revisão. Veja [calendar-concurrency.md](calendar-concurrency.md).
+
 > Atualização: bloquear datas/horários com reservas confirmed ainda não encerradas recebe 409 JSON/no-store e rollback integral, dentro da mesma transação. Liberações não autorizam ignorar ocupação. Consulte [public-booking-creation-api.md](public-booking-creation-api.md).
 
 Esta etapa acrescenta bloqueios por data inteira e por bloco de hora de uma data, sem alterar o funcionamento semanal. Mantém a agenda única, um barbeiro, blocos de 60 minutos e fuso `America/Sao_Paulo`, conforme [booking-mvp-plan.md](booking-mvp-plan.md), [booking-schedule-model.md](booking-schedule-model.md) e [admin-booking-settings-api.md](admin-booking-settings-api.md).

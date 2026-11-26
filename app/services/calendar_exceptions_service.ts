@@ -1,3 +1,4 @@
+import { assertCalendarPrecondition, calendarTag } from '#services/calendar_precondition'
 import { DateTime } from 'luxon'
 import { protectDateBookings } from '#services/booking_calendar_protection'
 import db from '@adonisjs/lucid/services/db'
@@ -32,10 +33,17 @@ export default class CalendarExceptionsService {
     return this.database.transaction((trx) => this.load(trx, from, to))
   }
 
-  save(input: CalendarExceptionInput) {
+  save(input: CalendarExceptionInput, expected?: string) {
     return this.database.transaction(async (trx) => {
       // Same writer-lock strategy as weekly settings, including an absent singleton.
       await trx.from('booking_settings').where('id', 1).update({ id: 1 })
+      if (expected !== undefined) {
+        const current = await this.load(trx, input.localDate, input.localDate)
+        assertCalendarPrecondition(
+          expected,
+          calendarTag(current, `dates:${input.localDate}:${input.localDate}`)
+        )
+      }
       await protectDateBookings(trx, input, this.clock())
       if (input.dayBlock) {
         let record = await DateBlock.query({ client: trx })

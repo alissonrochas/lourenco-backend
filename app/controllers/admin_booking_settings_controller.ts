@@ -1,3 +1,8 @@
+import {
+  calendarTag,
+  StaleCalendarError,
+  InvalidCalendarPreconditionError,
+} from '#services/calendar_precondition'
 import { BookingCalendarConflictError } from '#services/booking_calendar_protection'
 import type { HttpContext } from '@adonisjs/core/http'
 import { errors } from '@vinejs/vine'
@@ -18,6 +23,12 @@ export default class AdminBookingSettingsController {
     try {
       return await ctx.serialize(BookingSettingsTransformer.transform(await operation()))
     } catch (error) {
+      if (error instanceof InvalidCalendarPreconditionError)
+        return ctx.response.unprocessableEntity({ message: 'Revisão de calendário inválida.' })
+      if (error instanceof StaleCalendarError)
+        return ctx.response.conflict({
+          message: 'O calendário foi alterado por outra operação. Recarregue antes de salvar.',
+        })
       if (
         error instanceof errors.E_VALIDATION_ERROR ||
         error instanceof InvalidBookingSettingsError
@@ -44,7 +55,11 @@ export default class AdminBookingSettingsController {
   }
 
   index(ctx: HttpContext) {
-    return this.respond(ctx, () => this.service.read())
+    return this.respond(ctx, async () => {
+      const result = await this.service.read()
+      ctx.response.header('ETag', calendarTag(result, 'weekly'))
+      return result
+    })
   }
 
   update(ctx: HttpContext) {
@@ -52,7 +67,9 @@ export default class AdminBookingSettingsController {
       const payload = await ctx.request.validateUsing(updateBookingSettingsValidator, {
         data: ctx.request.body(),
       })
-      return this.service.update(payload)
+      const result = await this.service.update(payload, ctx.request.header('if-match'))
+      ctx.response.header('ETag', calendarTag(result, 'weekly'))
+      return result
     })
   }
 }
