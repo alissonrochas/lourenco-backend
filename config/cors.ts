@@ -11,8 +11,8 @@ const corsConfig = defineConfig({
   enabled: true,
   origin: allowedOrigins,
   methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  headers: ['Content-Type', 'X-XSRF-TOKEN', 'X-CSRF-TOKEN'],
-  exposeHeaders: [],
+  headers: ['Content-Type', 'X-XSRF-TOKEN', 'X-CSRF-TOKEN', 'If-Match'],
+  exposeHeaders: ['ETag'],
   credentials: true,
   maxAge: 90,
 })

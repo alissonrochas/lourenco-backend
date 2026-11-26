@@ -1,3 +1,4 @@
+import { assertCalendarPrecondition, calendarTag } from '#services/calendar_precondition'
 import { DateTime } from 'luxon'
 import { protectWeeklyBookings } from '#services/booking_calendar_protection'
 import db from '@adonisjs/lucid/services/db'
@@ -99,13 +100,14 @@ export default class BookingSettingsService {
     return this.database.transaction((trx) => this.load(trx))
   }
 
-  update(payload: BookingSettingsPatch) {
+  update(payload: BookingSettingsPatch, expected?: string) {
     return this.database.transaction(async (trx) => {
       // The first statement is a write, even for an empty table. SQLite acquires
       // its writer lock before any configuration is read (also across processes).
       // No timestamp or business value is changed by this locking statement.
       await trx.from('booking_settings').where('id', 1).update({ id: 1 })
       const current = await this.load(trx)
+      assertCalendarPrecondition(expected, calendarTag(current, 'weekly'))
       if (!current.settings) await BookingSetting.create({ id: 1 }, { client: trx })
 
       for (const patch of payload.days) {
