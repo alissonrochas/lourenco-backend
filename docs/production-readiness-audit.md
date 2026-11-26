@@ -1,5 +1,7 @@
 # Auditoria de segurança e preparação para produção — Etapa 9
 
+> Etapa 10.1: a correção de R03 está proposta nesta branch e documentada em [rate-limiter.md](rate-limiter.md), aguardando revisão. A matriz abaixo permanece como registro histórico da auditoria; esta subetapa não declara prontidão para produção.
+
 Data: 26/11/2026. Escopo: leitura dos dois repositórios, testes em cópias/bancos descartáveis e documentação. **Nenhuma correção de produção, migration no banco original, publicação ou merge foi realizada.**
 
 Backend auditado: `15fda381bd1faa83775b7fe59f2f0cc41a74abd0` (merge PR #15). Frontend: `0af252f9191b625cdfbbc3500305604b20008d86` (merge PR #8). Links de evidência abaixo apontam para esses commits, não para uma main mutável. A branch desta entrega é `audit/production-readiness`, apenas no backend.
