@@ -92,7 +92,7 @@ test.group('public booking creation', (group) => {
     await clear()
     resetRateLimiter()
     originalClock = Settings.now
-    now = DateTime.fromISO('2026-01-01T00:00:00Z')
+    now = DateTime.fromISO('2026-12-01T00:00:00Z')
     Settings.now = () => now.toMillis()
     app.container.swap(BookingCreationService, () => new BookingCreationService(db, () => now))
     app.container.swap(
@@ -255,7 +255,7 @@ test.group('public booking creation', (group) => {
   test('past and already-started slots are rejected using the server clock', async () => {
     for (const reference of [`${date}T12:00:00Z`, `${date}T12:30:00Z`, '2027-01-01T00:00:00Z']) {
       now = DateTime.fromISO(reference)
-      await submit(input(), 409)
+      await submit(input(), reference.startsWith('2027') ? 422 : 409)
     }
     assert.equal(await count('customers'), 0)
   })
@@ -297,7 +297,8 @@ test.group('public booking creation', (group) => {
     assert.equal(await count('bookings'), 0)
   })
 
-  test('real leap dates are accepted and customer name follows the existing trim rules', async () => {
+  test('real leap dates within the horizon are accepted and customer name follows the existing trim rules', async () => {
+    now = DateTime.fromISO('2028-02-01T12:00:00Z')
     await WeeklyOpeningHour.create({
       weekday: 2,
       isActive: true,

@@ -97,7 +97,7 @@ test.group('stateless availability with instrumented SQLite session store', (gro
     app.container.swap(SessionMiddleware, () => sessions)
     app.container.swap(
       BookingAvailabilityService,
-      () => new BookingAvailabilityService(db, () => DateTime.fromISO('2026-01-01T00:00:00Z'))
+      () => new BookingAvailabilityService(db, () => DateTime.fromISO('2026-12-01T00:00:00Z'))
     )
     resetRateLimiter()
   })
@@ -134,7 +134,7 @@ test.group('stateless availability with instrumented SQLite session store', (gro
       durationMinutes: 30,
       isActive: true,
     })
-    await new BookingCreationService(db, () => DateTime.fromISO('2026-01-01T00:00:00Z')).create({
+    await new BookingCreationService(db, () => DateTime.fromISO('2026-12-01T00:00:00Z')).create({
       serviceId: service.id,
       localDate: '2026-12-25',
       startsAtMinute: 540,

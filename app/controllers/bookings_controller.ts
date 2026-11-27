@@ -1,3 +1,8 @@
+import {
+  BookingHorizonError,
+  BookingQuotaError,
+  horizonResponse,
+} from '#services/public_booking_policy'
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import { errors } from '@vinejs/vine'
@@ -24,6 +29,14 @@ export default class BookingsController {
       ctx.response.status(201)
       return await ctx.serialize(PublicBookingTransformer.transform(booking))
     } catch (error) {
+      if (error instanceof BookingHorizonError)
+        return ctx.response.unprocessableEntity(horizonResponse(error))
+      if (error instanceof BookingQuotaError)
+        return ctx.response.unprocessableEntity({
+          code: 'PUBLIC_BOOKING_NOT_ACCEPTED',
+          message:
+            'Não foi possível concluir a reserva pelo site. Entre em contato com a barbearia.',
+        })
       if (
         error instanceof errors.E_VALIDATION_ERROR ||
         error instanceof BookingServiceUnavailableError

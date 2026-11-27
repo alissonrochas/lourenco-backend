@@ -5,6 +5,7 @@ import WeeklyOpeningHour from '#models/weekly_opening_hour'
 import WeeklyBreak from '#models/weekly_break'
 import WeeklySlotBlock from '#models/weekly_slot_block'
 import Booking from '#models/booking'
+import PublicBookingPolicy from '#services/public_booking_policy'
 import DateBlock from '#models/date_block'
 import DateSlotBlock from '#models/date_slot_block'
 import {
@@ -24,6 +25,14 @@ export default class BookingAvailabilityService {
     private database: TransactionSource = db,
     private clock: () => DateTime = () => DateTime.utc()
   ) {}
+
+  /** Public admission boundary; internal callers retain unrestricted calendar reads. */
+  async calculatePublic(localDate: string) {
+    const now = this.clock()
+    const policy = new PublicBookingPolicy().assertDate(localDate, now)
+    const result = await this.calculate(localDate, { now })
+    return { ...result, policy }
+  }
 
   async calculate(localDate: string, options: AvailabilityOptions = {}) {
     const now = options.now ?? this.clock()

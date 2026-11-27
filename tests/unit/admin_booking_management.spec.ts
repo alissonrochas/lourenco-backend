@@ -54,7 +54,7 @@ test.group('administrative booking persistence and concurrency', () => {
     await isolated(async (temporary) => {
       const creation = new BookingCreationService(temporary.client, () => now)
       for (const startsAtMinute of [540, 660, 780])
-        await creation.create({ ...input, startsAtMinute })
+        await creation.create({ ...input, startsAtMinute, phone: `7199999${startsAtMinute}` })
       const queries: Array<{ sql: string; __knexTxId?: string }> = []
       const observe = (query: { sql: string; __knexTxId?: string }) => queries.push(query)
       const knex = temporary.client.getWriteClient()

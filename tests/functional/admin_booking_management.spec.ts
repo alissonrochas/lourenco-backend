@@ -4,6 +4,8 @@ import { DateTime, Settings } from 'luxon'
 import app from '@adonisjs/core/services/app'
 import db from '@adonisjs/lucid/services/db'
 import User from '#models/user'
+import Booking from '#models/booking'
+import Customer from '#models/customer'
 import Service from '#models/service'
 import WeeklyOpeningHour from '#models/weekly_opening_hour'
 import AdminBookingService from '#services/admin_booking_service'
@@ -22,12 +24,24 @@ let service: Service
 let cookie: string
 const cancelPath = (id: number | string) => `${path}/${id}/cancel`
 async function create(minute = 540, localDate = date, phone = '71999999999') {
-  return new BookingCreationService(db, () => now).create({
+  // Persist historical administrative fixtures directly: these may predate public limits.
+  const customer = await Customer.firstOrCreate(
+    { phoneNormalized: phone },
+    { name: 'Cliente privado', phone }
+  )
+  const start = DateTime.fromISO(`${localDate}T00:00:00`, { zone: 'America/Sao_Paulo' }).plus({
+    minutes: minute,
+  })
+  return Booking.create({
+    customerId: customer.id,
     serviceId: service.id,
     localDate,
     startsAtMinute: minute,
-    name: 'Cliente privado',
-    phone,
+    startsAtUtc: start.toMillis(),
+    endsAtUtc: start.plus({ hours: 1 }).toMillis(),
+    status: 'confirmed',
+    serviceNameSnapshot: service.name,
+    servicePriceCentsSnapshot: service.priceCents,
   })
 }
 type Entry = {

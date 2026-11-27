@@ -97,7 +97,7 @@ test.group('public booking availability API', (group) => {
       'users',
     ])
       await db.from(table).delete()
-    reference = DateTime.fromISO('2026-01-01T00:00:00Z')
+    reference = DateTime.fromISO('2026-12-01T00:00:00Z')
     // Real service and real SQLite; only the clock is injected through the container.
     app.container.swap(
       BookingAvailabilityService,
@@ -113,7 +113,7 @@ test.group('public booking availability API', (group) => {
     assert.deepEqual(Object.keys(body), ['data'])
     assert.deepEqual(
       Object.keys(body.data).sort(),
-      ['localDate', 'weekday', 'timezone', 'slotDurationMinutes', 'slots'].sort()
+      ['localDate', 'weekday', 'timezone', 'slotDurationMinutes', 'slots', 'policy'].sort()
     )
     assert.equal(body.data.localDate, date)
     assert.equal(body.data.weekday, 5)
@@ -217,13 +217,15 @@ test.group('public booking availability API', (group) => {
     assert.equal(exact.data.slots[0].startsAtMinute, 660)
   })
 
-  test('real leap dates and distant future dates are accepted without an invented booking horizon', async () => {
+  test('leap dates within the public window are accepted and distant dates receive the documented policy error', async () => {
+    reference = DateTime.fromISO('2028-02-01T12:00:00Z')
     await open(2) // 2028-02-29 is Tuesday.
     const leap = await read('/api/availability?date=2028-02-29')
     assert.equal(leap.data.localDate, '2028-02-29')
     assert.equal(leap.data.slots.length, 9)
-    const future = await read('/api/availability?date=2099-12-25')
-    assert.equal(future.data.localDate, '2099-12-25')
+    const future = await getJson('/api/availability?date=2099-12-25')
+    assert.equal(future.status, 422)
+    assert.equal(((await future.json()) as { code: string }).code, 'BOOKING_DATE_OUT_OF_RANGE')
   })
 
   test('invalid, missing, unknown, duplicated and structured query values produce JSON 422', async () => {
