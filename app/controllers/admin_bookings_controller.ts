@@ -1,3 +1,5 @@
+import { internalServerError } from '#services/http_response_policy'
+import { logHttpFailure } from '#services/safe_http_logging'
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import { errors } from '@vinejs/vine'
@@ -44,8 +46,8 @@ export default class AdminBookingsController {
         message: 'Conflito ao atualizar a reserva. Recarregue e tente novamente.',
       })
     // Do not log SQL, bindings, phone numbers or cancellation reasons.
-    ctx.logger.error('Falha inesperada na gestão administrativa de reservas')
-    return ctx.response.internalServerError({ message: 'Não foi possível concluir a operação.' })
+    logHttpFailure(ctx, error, 'admin_booking_failure')
+    return ctx.response.internalServerError(internalServerError)
   }
 
   async index(ctx: HttpContext) {

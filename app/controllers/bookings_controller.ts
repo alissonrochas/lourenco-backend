@@ -1,3 +1,5 @@
+import { internalServerError } from '#services/http_response_policy'
+import { logHttpFailure } from '#services/safe_http_logging'
 import {
   BookingHorizonError,
   BookingQuotaError,
@@ -58,8 +60,8 @@ export default class BookingsController {
           message: 'Não foi possível confirmar a reserva. Tente novamente.',
         })
       // Do not log the driver error: SQL/bindings may contain personal information.
-      ctx.logger.error('Falha inesperada ao criar reserva')
-      return ctx.response.internalServerError({ message: 'Não foi possível confirmar a reserva.' })
+      logHttpFailure(ctx, error, 'booking_failure')
+      return ctx.response.internalServerError(internalServerError)
     }
   }
 }
