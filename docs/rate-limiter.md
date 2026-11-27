@@ -38,7 +38,7 @@ O limite controla quantidade de entradas **e tamanho de seus identificadores ret
 2. Chaves já conhecidas continuam usando seus contadores: se esgotados, permanecem recusados; se houver orçamento, podem ser atendidas conforme o limite original.
 3. Uma chave nova sem vaga é recusada sem inserção, com `allowed:false`, remaining=0. Os middlewares existentes traduzem isso para 429 JSON e mantêm suas mensagens.
 4. Retry-After de saturação usa a expiração mais próxima conhecida, arredondada em segundos, no mínimo um. Não promete admissão na próxima tentativa, pois outra requisição pode ocupar a vaga.
-5. A próxima varredura recupera vagas expiradas. Entre varreduras, a recusa pode ser conservadora por até um segundo de atividade. Se a expiração mínima ficou obsoleta por renovação direta de uma chave, Retry-After pode ser um segundo até a próxima varredura; isso nunca remove um contador ativo nem permite ultrapassar seu orçamento.
+5. A próxima varredura recupera vagas expiradas. Entre varreduras, a recusa pode ser conservadora por até um segundo de atividade. Se a expiração mínima estiver vencida ou não finita ao recusar uma chave desconhecida por saturação, ela é recalculada sobre as entradas retidas. Isso corrige a renovação direta da chave mais próxima entre varreduras: o Retry-After passa a refletir a próxima expiração real, sem remover entradas ativas. Essa varredura adicional é restrita à saturação com metadado obsoleto; chamadas normais e recusas com mínimo ainda válido não a executam. Entradas realmente vencidas de outras chaves ainda podem levar à recusa conservadora de um segundo até a próxima limpeza global.
 
 A saturação pode recusar clientes legítimos com chaves novas. Essa é uma escolha explícita de disponibilidade degradada para preservar memória e impedir bypass por expulsão de contadores. Um flood sustentado ainda pode manter pressão sobre a capacidade; a correção não pretende resolver todo DoS, criar cotas por telefone ou substituir proteções de borda.
 
@@ -54,9 +54,10 @@ O pipeline global de body parser, sessão, Shield e silent auth não foi reorgan
 
 ## Testes e evidências
 
-Foram adicionados **12 unitários e 4 funcionais**:
+Foram adicionados **13 unitários e 4 funcionais**:
 
 - Janelas fixas, fronteira de vencimento, arredondamento de Retry-After, renovação e coleta por uma chave diferente.
+- Regressão determinística da renovação direta entre varreduras com três expirações diferentes: Retry-After de 20 segundos, recusa sem expulsão e recuperação na próxima expiração.
 - Limpeza preservando contadores ativos; capacidade pequena sem expulsão; recusa conservadora entre varreduras; recuperação após expiração.
 - Carga controlada de 20.000 chaves, entrada original longa, distinção de namespaces, reset e configuração interna inválida.
 - 500 chamadores por Promise.all no mesmo processo: somente 30 permissões para orçamento 30. Não representa concorrência entre processos.
@@ -75,9 +76,9 @@ Uma reprodução adicional com o **serviço real e relógio injetado**, sem banc
 | Chave já bloqueada continua recusada | Sim |
 | Após vencer as 10.000 e consultar chave diferente | Uma nova entrada; as antigas foram recolhidas |
 
-Na execução backend final: **285 aprovados, zero reprovados** (112 unitários e 173 funcionais), incluindo regressões de reservas, clientes, disponibilidade, sessão, CSRF e calendário. Lint e build aprovados. Typecheck mantém **somente os oito diagnósticos preexistentes do Inertia**, em marketing/signup, sem correções fora do escopo. As verificações são feitas numa cópia descartável e SQLite de teste; nenhuma migration no banco original.
+Na execução backend final: **286 aprovados, zero reprovados** (113 unitários e 173 funcionais), incluindo regressões de reservas, clientes, disponibilidade, sessão, CSRF e calendário. Lint e build aprovados. Typecheck mantém **somente os oito diagnósticos preexistentes do Inertia**, em marketing/signup, sem correções fora do escopo. As verificações são feitas numa cópia descartável e SQLite de teste; nenhuma migration no banco original.
 
-Os **44 E2E reais passaram**, em desktop e mobile, pelo harness do frontend sem alterar seu código, com backend e SQLite descartáveis. O harness confirmou a preservação dos arquivos originais. Somando as suítes, são **329 testes aprovados**. Testes de componentes com mocks não são apresentados como prova de integração. Não foram feitos ataques contra serviços públicos.
+Os **44 E2E reais passaram**, em desktop e mobile, pelo harness do frontend sem alterar seu código, com backend e SQLite descartáveis. O harness confirmou a preservação dos arquivos originais. Somando as suítes, são **330 testes aprovados**. Testes de componentes com mocks não são apresentados como prova de integração. Não foram feitos ataques contra serviços públicos.
 
 ```bash
 # Em ambiente de teste isolado, conforme o bootstrap existente:
@@ -96,3 +97,5 @@ E2E_BROWSER_CHANNEL=chrome npm run test:e2e
 - Date.now mantém a base temporal anterior; ajustes do relógio não são um novo mecanismo distribuído. Não foram feitos testes de carga de longa duração ou promessa de throughput.
 - O hash limita o identificador armazenado, mas não evita o custo de parsing de uma requisição recebida. Login bloqueado por IP evita ler/hashear o e-mail; outras proteções permanecem conforme os middlewares anteriores.
 - R04 (política contra ocupação abusiva), implantação, backup, logs e os demais achados da auditoria não foram corrigidos nesta subetapa. A revisão técnica deve aprovar R03 antes do merge; não se declara a aplicação pronta para produção.
+
+Os resultados acima são relatados pelo Codex a partir de execuções locais em ambientes isolados. A PR não possui workflows/checks do GitHub que forneçam verificação independente automática; a revisão técnica continua necessária.

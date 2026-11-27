@@ -81,6 +81,32 @@ test.group('bounded in-memory rate limiter', () => {
     now = 1000
     assert.equal(limiter.check('unknown', 1, 500).allowed, true)
   })
+  test('refreshes saturated Retry-After after direct renewal of the earliest key between sweeps', () => {
+    let now = 0
+    const limiter = new InMemoryRateLimiter(3, () => now)
+    limiter.check('earliest', 1, 500)
+    limiter.check('middle', 1, 20000)
+    limiter.check('latest', 1, 60000)
+    now = 500
+    assert.equal(limiter.check('earliest', 1, 900000).allowed, true)
+    assert.equal(limiter.size, 3)
+    assert.deepEqual(limiter.check('unknown', 1, 900000), {
+      allowed: false,
+      remaining: 0,
+      retryAfterSeconds: 20,
+    })
+    assert.equal(limiter.check('earliest', 1, 900000).allowed, false)
+    assert.equal(limiter.check('latest', 1, 60000).allowed, false)
+    now = 501
+    assert.equal(limiter.check('unknown', 1, 900000).retryAfterSeconds, 20)
+    assert.equal(limiter.size, 3)
+    now = 20000
+    assert.equal(limiter.check('unknown', 1, 900000).allowed, true)
+    assert.equal(limiter.size, 3)
+    assert.equal(limiter.check('earliest', 1, 900000).allowed, false)
+    assert.equal(limiter.check('latest', 1, 60000).allowed, false)
+    assert.equal(limiter.check('unknown', 1, 900000).allowed, false)
+  })
   test('controls a 20000-key flood and collects the whole expired population', () => {
     let now = 0
     const limiter = new InMemoryRateLimiter(128, () => now)

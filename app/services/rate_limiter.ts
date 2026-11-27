@@ -50,6 +50,13 @@ export class InMemoryRateLimiter {
     }
     if (!existing) {
       if (this.entries.size >= this.capacity) {
+        // Direct renewal between sweeps may leave the cached minimum in the past.
+        // Refresh only on saturation with stale metadata; never evict live entries.
+        if (!Number.isFinite(this.earliestExpiry) || this.earliestExpiry <= now) {
+          this.earliestExpiry = Infinity
+          for (const entry of this.entries.values())
+            this.earliestExpiry = Math.min(this.earliestExpiry, entry.expiresAt)
+        }
         // Never evict a live counter: unknown keys fail closed until capacity returns.
         return {
           allowed: false,
