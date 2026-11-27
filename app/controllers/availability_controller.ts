@@ -1,3 +1,4 @@
+import { BookingHorizonError, horizonResponse } from '#services/public_booking_policy'
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import { errors } from '@vinejs/vine'
@@ -23,9 +24,11 @@ export default class AvailabilityController {
       const input = await ctx.request.validateUsing(publicAvailabilityValidator, {
         data: ctx.request.qs(),
       })
-      const result = await this.availability.calculate(input.date)
+      const result = await this.availability.calculatePublic(input.date)
       return await ctx.serialize(PublicAvailabilityTransformer.transform(result))
     } catch (error) {
+      if (error instanceof BookingHorizonError)
+        return ctx.response.unprocessableEntity(horizonResponse(error))
       if (
         error instanceof errors.E_VALIDATION_ERROR ||
         error instanceof InvalidAvailabilityInputError

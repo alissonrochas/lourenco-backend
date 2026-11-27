@@ -15,7 +15,7 @@ import CalendarExceptionsService from '#services/calendar_exceptions_service'
 import { BookingCalendarConflictError } from '#services/booking_calendar_protection'
 import { createBookingsDatabase } from '#tests/helpers/bookings_database'
 
-const now = DateTime.fromISO('2026-01-01T00:00:00Z')
+const now = DateTime.fromISO('2026-12-01T00:00:00Z')
 const input = {
   serviceId: 1,
   localDate: '2026-12-28',

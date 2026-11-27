@@ -1,5 +1,7 @@
 # Auditoria de segurança e preparação para produção — Etapa 9
 
+> R04 está sendo tratado na branch `fix/booking-abuse-policy`; política, contratos e limitações em [public-booking-policy.md](public-booking-policy.md). Correção sujeita a revisão, sem declaração de prontidão para produção.
+
 > Etapa 10.1: a correção de R03 está proposta nesta branch e documentada em [rate-limiter.md](rate-limiter.md), aguardando revisão. A matriz abaixo permanece como registro histórico da auditoria; esta subetapa não declara prontidão para produção.
 
 Data: 26/11/2026. Escopo: leitura dos dois repositórios, testes em cópias/bancos descartáveis e documentação. **Nenhuma correção de produção, migration no banco original, publicação ou merge foi realizada.**
