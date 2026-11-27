@@ -471,7 +471,8 @@ test.group('public booking creation', (group) => {
   test('unexpected errors are generic even with HTML Accept; busy and unique errors are controlled', async () => {
     app.container.swap(BookingCreationService, () => new FailureService())
     assert.deepEqual(await submit(input(), 500), {
-      message: 'Não foi possível confirmar a reserva.',
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Não foi possível processar a solicitação.',
     })
     app.container.swap(BookingCreationService, () => new BusyService())
     assert.deepEqual(await submit(input(), 503), {

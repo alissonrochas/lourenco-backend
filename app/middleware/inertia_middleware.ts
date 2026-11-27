@@ -1,3 +1,4 @@
+import { isApiRequest } from '#services/http_response_policy'
 import type { HttpContext } from '@adonisjs/core/http'
 import type { NextFn } from '@adonisjs/core/types/http'
 import UserTransformer from '#transformers/user_transformer'
@@ -47,6 +48,8 @@ export default class InertiaMiddleware extends BaseInertiaMiddleware {
   }
 
   async handle(ctx: HttpContext, next: NextFn) {
+    // API contracts never participate in Inertia redirects/asset-version negotiation.
+    if (isApiRequest(ctx)) return next()
     await this.init(ctx)
 
     const output = await next()

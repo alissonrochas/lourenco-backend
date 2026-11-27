@@ -1,3 +1,4 @@
+import { logHttpFailure } from '#services/safe_http_logging'
 import { BookingHorizonError, horizonResponse } from '#services/public_booking_policy'
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
@@ -37,7 +38,7 @@ export default class AvailabilityController {
           message: 'Informe uma única data válida no formato YYYY-MM-DD.',
         })
       }
-      ctx.logger.error({ err: error }, 'Falha ao consultar disponibilidade')
+      logHttpFailure(ctx, error, 'availability_failure')
       return ctx.response.serviceUnavailable({
         message: 'Não foi possível consultar os horários. Tente novamente.',
       })

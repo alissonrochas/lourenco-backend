@@ -1,3 +1,4 @@
+import { safeError, safeBindings } from '#services/safe_http_logging'
 import env from '#start/env'
 import app from '@adonisjs/core/services/app'
 import { defineConfig, syncDestination, targets } from '@adonisjs/core/logger'
@@ -19,6 +20,39 @@ const loggerConfig = defineConfig({
        * Logger name shown in log records.
        */
       name: env.get('APP_NAME'),
+      serializers: { err: safeError, error: safeError },
+      formatters: { bindings: safeBindings },
+      // Defense in depth. Call sites must never interpolate input into messages.
+      redact: {
+        paths: [
+          'request_id',
+          'req',
+          'request',
+          'res',
+          'response',
+          'headers',
+          'cookies',
+          'cookie',
+          'session',
+          'auth',
+          'body',
+          'password',
+          'token',
+          'authorization',
+          'phone',
+          'email',
+          'sql',
+          'bindings',
+          'query',
+          '*.password',
+          '*.token',
+          '*.phone',
+          '*.email',
+          '*.sql',
+          '*.bindings',
+        ],
+        remove: true,
+      },
 
       /**
        * Minimum level to output (trace, debug, info, warn, error, fatal).

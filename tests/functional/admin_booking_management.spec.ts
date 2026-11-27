@@ -513,10 +513,12 @@ test.group('administrative booking management', (group) => {
   test('unexpected errors and temporary contention use generic JSON responses', async () => {
     app.container.swap(AdminBookingService, () => new Failure())
     assert.deepEqual(await json(await getJson(query, cookie, 'text/html'), 500), {
-      message: 'Não foi possível concluir a operação.',
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Não foi possível processar a solicitação.',
     })
     assert.deepEqual(await cancel(1, { reason: 'Motivo' }, 500), {
-      message: 'Não foi possível concluir a operação.',
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Não foi possível processar a solicitação.',
     })
     app.container.swap(AdminBookingService, () => new Busy())
     await cancel(1, { reason: 'Motivo' }, 503)
